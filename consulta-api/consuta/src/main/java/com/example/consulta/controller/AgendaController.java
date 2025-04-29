@@ -3,6 +3,9 @@ package com.example.consulta.controller;
 
 import com.example.consulta.model.Agenda;
 import com.example.consulta.service.AgendaService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +14,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/agendas")
+@Tag(name = "Agenda", description = "Operações para gerenciar agendas")
 public class AgendaController {
 
     @Autowired

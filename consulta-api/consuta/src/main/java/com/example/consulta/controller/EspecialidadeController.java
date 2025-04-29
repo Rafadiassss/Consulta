@@ -2,6 +2,9 @@ package com.example.consulta.controller;
 
 import com.example.consulta.model.Especialidade;
 import com.example.consulta.service.EspecialidadeService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/especialidades")
+@Tag(name = "Especialidade", description = "Operações para gerenciar especialidades")
 public class EspecialidadeController {
 
     @Autowired

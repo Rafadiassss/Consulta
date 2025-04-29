@@ -1,14 +1,17 @@
 package com.example.consulta.model;
 
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
+@DiscriminatorValue("MEDICO")
 public class Medico extends Usuario {
 
     private String crm;
     private String especialidade;
 
     // Getters e Setters
+    
     public String getCrm() {
         return crm;
     }
@@ -24,4 +27,5 @@ public class Medico extends Usuario {
     public void setEspecialidade(String especialidade) {
         this.especialidade = especialidade;
     }
+
 }

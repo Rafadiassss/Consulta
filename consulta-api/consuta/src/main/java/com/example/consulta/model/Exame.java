@@ -13,7 +13,8 @@ public class Exame {
     private String resultado;
     private String observacoes;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
+    
     @JoinColumn(name = "consulta_id")
     private Consulta consulta;
 

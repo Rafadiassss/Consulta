@@ -17,7 +17,8 @@ public class Pagamento {
     private String formaPagamento;
     private String status;
 
-    @OneToOne(mappedBy = "pagamento")
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "consulta_id")
     private Consulta consulta;
 
     // Construtores

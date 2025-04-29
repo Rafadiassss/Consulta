@@ -2,9 +2,12 @@ package com.example.consulta.model;
 
 import jakarta.persistence.*;
 
-@MappedSuperclass // ou @Entity, se for entidade concreta
-public abstract class Usuario {
-
+@Entity
+@Table(name = "usuarios") 
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "dtype")
+@DiscriminatorValue("PACIENTE")
+public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -14,8 +17,8 @@ public abstract class Usuario {
     private String senha;
     private String tipo;
     private String cpf;
+   
 
-    // Getters e Setters
     public String getTipo() {
         return tipo;
     }

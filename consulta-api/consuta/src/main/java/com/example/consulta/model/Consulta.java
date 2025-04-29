@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
 public class Consulta {
@@ -12,7 +13,9 @@ public class Consulta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime data;
+
     private String status;
 
     @ManyToOne
@@ -23,14 +26,18 @@ public class Consulta {
     @JoinColumn(name = "medico_id")
     private Medico medico;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "pagamento_id")
     private Pagamento pagamento;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "prontuario_id")
     private Prontuario prontuario;
+    private String nomeConsulta;
 
+    public Consulta(String nomeConsulta) {
+        this.nomeConsulta = nomeConsulta;
+    }
     // Construtores
     public Consulta() {}
 
@@ -89,7 +96,16 @@ public class Consulta {
     public Prontuario getProntuario() {
         return prontuario;
     }
-
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public String getNomeConsulta() {
+        return nomeConsulta;
+    }
+    public void setNomeConsulta(String nomeConsulta) {
+        this.nomeConsulta = nomeConsulta;
+    }
     public void setProntuario(Prontuario prontuario) {
         this.prontuario = prontuario;
     }

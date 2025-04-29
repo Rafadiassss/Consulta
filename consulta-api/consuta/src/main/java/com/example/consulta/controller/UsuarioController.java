@@ -4,23 +4,22 @@ import com.example.consulta.model.Medico;
 import com.example.consulta.model.Paciente;
 import com.example.consulta.model.Usuario;
 import com.example.consulta.service.UsuarioService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/usuarios")
+@Tag(name = "Usuário", description = "Operações para gerenciar usuários")
 public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
 
-    @GetMapping
-    public List<Usuario> listar() {
-        return usuarioService.listarTodos();
-    }
 
     @GetMapping("/{id}")
     public Optional<Usuario> buscarPorId(@PathVariable Long id) {
@@ -44,5 +43,10 @@ public class UsuarioController {
     @PostMapping("/paciente")
     public Usuario salvarPaciente(@RequestBody Paciente paciente) {
     return usuarioService.salvar(paciente);
+    }
+    @PutMapping("/{id}")
+    public Usuario atualizar(@PathVariable Long id, @RequestBody Usuario usuario) {
+        usuario.setId(id);
+        return usuarioService.salvar(usuario);
     }
 }
