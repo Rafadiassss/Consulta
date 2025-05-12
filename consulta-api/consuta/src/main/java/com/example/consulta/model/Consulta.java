@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 @Entity
 public class Consulta {
 
@@ -30,16 +29,18 @@ public class Consulta {
     @JoinColumn(name = "pagamento_id")
     private Pagamento pagamento;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.PERSIST)  // Usando CascadeType.PERSIST para garantir persistência do prontuário
     @JoinColumn(name = "prontuario_id")
     private Prontuario prontuario;
+
     private String nomeConsulta;
+
+    // Construtores
+    public Consulta() {}
 
     public Consulta(String nomeConsulta) {
         this.nomeConsulta = nomeConsulta;
     }
-    // Construtores
-    public Consulta() {}
 
     public Consulta(LocalDateTime data, String status, Paciente paciente, Medico medico) {
         this.data = data;
@@ -96,17 +97,23 @@ public class Consulta {
     public Prontuario getProntuario() {
         return prontuario;
     }
-    
-    public void setId(Long id) {
-        this.id = id;
+
+    public void setProntuario(Prontuario prontuario) {
+        this.prontuario = prontuario;
+        if (prontuario != null) {
+            prontuario.setConsulta(this);  // Estabelece a relação bidirecional
+        }
     }
+
     public String getNomeConsulta() {
         return nomeConsulta;
     }
+
     public void setNomeConsulta(String nomeConsulta) {
         this.nomeConsulta = nomeConsulta;
     }
-    public void setProntuario(Prontuario prontuario) {
-        this.prontuario = prontuario;
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

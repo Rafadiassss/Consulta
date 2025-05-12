@@ -44,17 +44,14 @@ public class ConsultaService {
     // Salvar ou atualizar consulta com seus dados
     @Transactional
     public Consulta salvar(Consulta consulta) {
-        // Salvar o médico, se ele estiver presente na consulta
         Medico medico = consulta.getMedico();
 
         if (medico != null) {
-            // Se o médico tem ID, tenta buscar no banco de dados
             if (medico.getId() != null) {
                 Medico medicoExistente = medicoRepository.findById(medico.getId())
                         .orElseThrow(() -> new RuntimeException("Médico não encontrado com ID: " + medico.getId()));
                 consulta.setMedico(medicoExistente);
             } else {
-                // Se o médico não tem ID, ele é salvo antes de associá-lo à consulta
                 Medico medicoSalvo = medicoRepository.save(medico);
                 consulta.setMedico(medicoSalvo);
             }
@@ -62,17 +59,29 @@ public class ConsultaService {
             throw new RuntimeException("Médico inválido: é necessário fornecer um médico para a consulta");
         }
 
-        
-        if (consulta.getProntuario() != null) {
-            Prontuario prontuario = consulta.getProntuario();
+        // Persistir o prontuário se presente
+        final Prontuario originalProntuario = consulta.getProntuario();
 
-           
-            if (prontuario.getId() != null) {
-                prontuario = prontuarioRepository.save(prontuario); 
+        if (originalProntuario != null) {
+            Prontuario prontuarioParaSalvar;
+
+            if (originalProntuario.getId() == null) {
+                prontuarioParaSalvar = prontuarioRepository.save(originalProntuario);
+            } else {
+                Prontuario prontuarioExistente = prontuarioRepository.findById(originalProntuario.getId())
+                        .orElseThrow(() -> new RuntimeException("Prontuário não encontrado com ID: " + originalProntuario.getId()));
+
+                prontuarioExistente.setNumero(originalProntuario.getNumero());
+                prontuarioExistente.setDiagnostico(originalProntuario.getDiagnostico());
+                prontuarioExistente.setTratamento(originalProntuario.getTratamento());
+                prontuarioExistente.setObservacoes(originalProntuario.getObservacoes());
+
+                prontuarioParaSalvar = prontuarioRepository.save(prontuarioExistente);
             }
-            consulta.setProntuario(prontuario);
+
+            consulta.setProntuario(prontuarioParaSalvar);
         }
+
         return consultaRepository.save(consulta);
     }
-
 }

@@ -3,7 +3,6 @@ package com.example.consulta.model;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 @Entity
 public class Prontuario {
 
@@ -11,14 +10,15 @@ public class Prontuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String numero; // Agora temos um campo número (representando o identificador)
+    private String numero;
     private String diagnostico;
     private String tratamento;
     private String observacoes;
-    
-    
+
     @OneToOne(mappedBy = "prontuario")
-    private Consulta consulta;
+    private Consulta consulta;  // Relacionamento bidirecional
+
+    private String prontuario;  // Aqui estamos tratando como uma string
 
     // Construtores
     public Prontuario() {}
@@ -30,13 +30,12 @@ public class Prontuario {
         this.observacoes = observacoes;
     }
 
+    // Construtor com @JsonCreator para deserializar a string
     @JsonCreator
-    public static Prontuario fromString(@JsonProperty("numero") String numero) {
-        return new Prontuario(numero, "", "", "");  // Cria uma instância usando apenas o número
+    public Prontuario(@JsonProperty("prontuario") String prontuario) {
+        this.prontuario = prontuario;
     }
-    public Prontuario(String numero) {
-        this.numero = numero;
-    }
+
     // Getters e Setters
     public Long getId() {
         return id;
@@ -78,17 +77,19 @@ public class Prontuario {
         this.observacoes = observacoes;
     }
 
+    public String getProntuario() {
+        return prontuario;
+    }
+
+    public void setProntuario(String prontuario) {
+        this.prontuario = prontuario;
+    }
+
     public Consulta getConsulta() {
         return consulta;
     }
 
     public void setConsulta(Consulta consulta) {
         this.consulta = consulta;
-    }
-
-
-    // Método para gerar o relatório do prontuário
-    public String gerarRelatorio() {
-        return "Número: " + numero + "\nDiagnóstico: " + diagnostico + "\nTratamento: " + tratamento + "\nObservações: " + observacoes;
     }
 }

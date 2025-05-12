@@ -1,6 +1,7 @@
 package com.example.consulta.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "usuarios") 
@@ -16,8 +17,9 @@ public class Usuario {
     private String username;
     private String senha;
     private String tipo;
-    private String cpf;
-   
+    private String telefone;
+    private String email;
+    private LocalDate dataNascimento;
 
     public String getTipo() {
         return tipo;
@@ -59,13 +61,27 @@ public class Usuario {
         this.senha = senha;
     }
 
-    public String getCpf() {
-        return cpf;
+    public String getTelefone() {
+        return telefone;
     }
 
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
 
-    // getters e setters dos outros atributos
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
 }

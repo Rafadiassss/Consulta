@@ -20,7 +20,6 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-
     @GetMapping("/{id}")
     public Optional<Usuario> buscarPorId(@PathVariable Long id) {
         return usuarioService.buscarPorId(id);
@@ -38,12 +37,14 @@ public class UsuarioController {
 
     @PostMapping("/medico")
     public Usuario salvarMedico(@RequestBody Medico medico) {
-        return usuarioService.salvar(medico);
+        return usuarioService.salvarMedico(medico);
     }
+
     @PostMapping("/paciente")
     public Usuario salvarPaciente(@RequestBody Paciente paciente) {
-    return usuarioService.salvar(paciente);
+        return usuarioService.salvarPaciente(paciente);
     }
+
     @PutMapping("/{id}")
     public Usuario atualizar(@PathVariable Long id, @RequestBody Usuario usuario) {
         usuario.setId(id);
