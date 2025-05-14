@@ -1,33 +1,44 @@
 package com.example.consulta.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.consulta.model.Prontuario;
+import com.example.consulta.model.Usuario;
+import com.example.consulta.repository.ProtuarioRepository;
+import com.example.consulta.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.example.consulta.model.Prontuario;
-import com.example.consulta.repository.ProtuarioRepository;
-
-import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ProntuarioService {
 
-    @Autowired
-    private ProtuarioRepository prontuarioRepository;
+    private final ProtuarioRepository prontuarioRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public List<Prontuario> listarTodas() {
-        return prontuarioRepository.findAll();
+    public ProntuarioService(ProtuarioRepository prontuarioRepository, UsuarioRepository usuarioRepository) {
+        this.prontuarioRepository = prontuarioRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
-    public Optional<Prontuario> buscarPorId(Long id) {
-        return prontuarioRepository.findById(id);
-    }
+    public ResponseEntity<String> criarProntuario(Long idUsuario, Prontuario prontuario) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
 
-    public Prontuario salvar(Prontuario prontuario) {
-        return prontuarioRepository.save(prontuario);
-    }
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário (médico) não encontrado.");
+        }
 
-    public void deletar(Long id) {
-        prontuarioRepository.deleteById(id);
+        Usuario usuario = usuarioOpt.get();
+
+        if (!"MÉDICO".equals(usuario.getTipo())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas médicos podem criar prontuários.");
+        }
+
+        prontuarioRepository.save(prontuario);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("Prontuário criado com sucesso.");
     }
+    public Usuario getUsuarioById(long id) {
+    return usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+}
 }

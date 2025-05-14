@@ -4,10 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "usuarios") 
+@Table(name = "usuarios")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "dtype")
-@DiscriminatorValue("PACIENTE")
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,14 +19,6 @@ public class Usuario {
     private String telefone;
     private String email;
     private LocalDate dataNascimento;
-
-    public String getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
 
     public Long getId() {
         return id;
@@ -75,6 +66,14 @@ public class Usuario {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+        public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
     }
 
     public LocalDate getDataNascimento() {
