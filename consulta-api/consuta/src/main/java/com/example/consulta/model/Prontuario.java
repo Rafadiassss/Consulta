@@ -1,8 +1,8 @@
 package com.example.consulta.model;
 
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class Prontuario {
 
@@ -16,24 +16,18 @@ public class Prontuario {
     private String observacoes;
 
     @OneToOne(mappedBy = "prontuario")
+    @JsonIgnore
     private Consulta consulta;  // Relacionamento bidirecional
 
-    private String prontuario;  // Aqui estamos tratando como uma string
-
-    // Construtores
+    // Construtor padrão
     public Prontuario() {}
 
+    // Construtor completo
     public Prontuario(String numero, String diagnostico, String tratamento, String observacoes) {
         this.numero = numero;
         this.diagnostico = diagnostico;
         this.tratamento = tratamento;
         this.observacoes = observacoes;
-    }
-
-    // Construtor com @JsonCreator para deserializar a string
-    @JsonCreator
-    public Prontuario(@JsonProperty("prontuario") String prontuario) {
-        this.prontuario = prontuario;
     }
 
     // Getters e Setters
@@ -75,14 +69,6 @@ public class Prontuario {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
-    }
-
-    public String getProntuario() {
-        return prontuario;
-    }
-
-    public void setProntuario(String prontuario) {
-        this.prontuario = prontuario;
     }
 
     public Consulta getConsulta() {
