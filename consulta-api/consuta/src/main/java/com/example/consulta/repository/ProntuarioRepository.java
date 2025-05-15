@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.example.consulta.model.Prontuario;
 
 @Repository
-public interface ProtuarioRepository extends JpaRepository<Prontuario, Long> {
-    
+public interface ProntuarioRepository extends JpaRepository<Prontuario, Long> {
+
 } 

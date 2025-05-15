@@ -9,8 +9,7 @@ import com.example.consulta.model.Medico;
 import com.example.consulta.model.Prontuario;
 import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.MedicoRepository;
-import com.example.consulta.repository.ProtuarioRepository;
-
+import com.example.consulta.repository.ProntuarioRepository;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +23,7 @@ public class ConsultaService {
     private MedicoRepository medicoRepository;
 
     @Autowired
-    private ProtuarioRepository prontuarioRepository;
+    private ProntuarioRepository prontuarioRepository;
 
     // Listar todas as consultas
     public List<Consulta> listarTodas() {
