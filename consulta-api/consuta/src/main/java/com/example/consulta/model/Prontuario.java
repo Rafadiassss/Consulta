@@ -3,7 +3,7 @@ package com.example.consulta.model;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@Entity
+@Entity 
 public class Prontuario {
 
     @Id

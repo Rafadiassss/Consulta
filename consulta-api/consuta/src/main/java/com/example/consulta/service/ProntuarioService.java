@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-@Service
+@Service 
 public class ProntuarioService {
 
     private final ProtuarioRepository prontuarioRepository;
@@ -40,5 +40,23 @@ public class ProntuarioService {
     }
     public Usuario getUsuarioById(long id) {
     return usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-}
+    }
+     public ResponseEntity<?> buscarProntuario(Long idUsuario, Long idProntuario) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
+        }
+
+        Usuario usuario = usuarioOpt.get();
+        if (!"MÉDICO".equals(usuario.getTipo())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas médicos podem visualizar prontuários.");
+        }
+
+        Optional<Prontuario> prontuarioOpt = prontuarioRepository.findById(idProntuario);
+        if (prontuarioOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Prontuário não encontrado.");
+        }
+
+        return ResponseEntity.ok(prontuarioOpt.get());
+    }
 }

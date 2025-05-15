@@ -12,14 +12,21 @@ public class ProntuarioController {
     private final ProntuarioService prontuarioService;
 
     public ProntuarioController(ProntuarioService prontuarioService) {
-        this.prontuarioService = prontuarioService;
+        this.prontuarioService = prontuarioService; 
     }
 
-    @PostMapping("/salvar")
+    @PostMapping("/salvar/{idUsuario}")
     public ResponseEntity<String> salvar(
-            @RequestParam Long idUsuario,
-            @RequestBody Prontuario prontuario) {
+        @PathVariable Long idUsuario,
+        @RequestBody Prontuario prontuario) {
 
-        return prontuarioService.criarProntuario(idUsuario, prontuario);
+    return prontuarioService.criarProntuario(idUsuario, prontuario);
+}
+    @GetMapping("/buscar/{idUsuario}/{idProntuario}")
+    public ResponseEntity<?> buscarProntuario(
+            @PathVariable Long idUsuario,
+            @PathVariable Long idProntuario) {
+
+        return prontuarioService.buscarProntuario(idUsuario, idProntuario);
     }
 }

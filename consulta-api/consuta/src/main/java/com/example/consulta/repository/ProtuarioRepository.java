@@ -7,5 +7,5 @@ import com.example.consulta.model.Prontuario;
 
 @Repository
 public interface ProtuarioRepository extends JpaRepository<Prontuario, Long> {
-   
+    
 } 
