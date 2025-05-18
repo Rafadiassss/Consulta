@@ -4,8 +4,13 @@ import jakarta.persistence.*;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
-@Entity
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+@Entity 
 public class Consulta {
 
     @Id
@@ -19,20 +24,24 @@ public class Consulta {
 
     @ManyToOne
     @JoinColumn(name = "paciente_id")
+    @JsonIgnoreProperties("consultas")
     private Paciente paciente;
 
     @ManyToOne
     @JoinColumn(name = "medico_id")
+    @JsonIgnoreProperties("consultas")
     private Medico medico;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "pagamento_id")
     private Pagamento pagamento;
+
 
     @OneToOne(cascade = CascadeType.PERSIST)  // Usando CascadeType.PERSIST para garantir persistência do prontuário
     @JoinColumn(name = "prontuario_id")
     private Prontuario prontuario;
 
+    
     private String nomeConsulta;
 
     // Construtores
@@ -86,14 +95,6 @@ public class Consulta {
         this.medico = medico;
     }
 
-    public Pagamento getPagamento() {
-        return pagamento;
-    }
-
-    public void setPagamento(Pagamento pagamento) {
-        this.pagamento = pagamento;
-    }
-
     public Prontuario getProntuario() {
         return prontuario;
     }
@@ -116,4 +117,14 @@ public class Consulta {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public Pagamento getPagamento() {
+        return pagamento;
+    }
+
+    public void setPagamento(Pagamento pagamento) {
+        this.pagamento = pagamento;
+    }
+
+   
 }

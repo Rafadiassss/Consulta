@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 public class Pagamento {
 
@@ -17,8 +19,9 @@ public class Pagamento {
     private String formaPagamento;
     private String status;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "consulta_id")
+    @JsonBackReference
     private Consulta consulta;
 
     // Construtores
