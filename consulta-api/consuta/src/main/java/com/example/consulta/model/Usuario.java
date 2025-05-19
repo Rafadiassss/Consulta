@@ -1,8 +1,11 @@
 package com.example.consulta.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
 @Table(name = "usuarios")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -14,7 +17,10 @@ public class Usuario {
 
     private String nome;
     private String username;
+
+    @JsonIgnore
     private String senha;
+
     private String tipo;
     private String telefone;
     private String email;

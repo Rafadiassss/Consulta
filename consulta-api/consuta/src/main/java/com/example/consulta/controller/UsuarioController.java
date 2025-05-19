@@ -8,8 +8,10 @@ import com.example.consulta.service.UsuarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -19,6 +21,11 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @GetMapping
+    public List<Usuario> listarTodos() {
+    return usuarioService.listarTodos();
+}
 
     @GetMapping("/{id}")
     public Optional<Usuario> buscarPorId(@PathVariable Long id) {
@@ -31,8 +38,11 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    public void deletar(@PathVariable Long id) {
-        usuarioService.deletar(id);
+    public ResponseEntity<?> deletar(@PathVariable Long id) {
+        return usuarioService.buscarPorId(id).map(usuario -> {
+            usuarioService.deletar(id);
+            return ResponseEntity.noContent().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/medico")

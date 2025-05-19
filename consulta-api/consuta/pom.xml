@@ -80,6 +80,11 @@
             <artifactId>hibernate-validator</artifactId>
             <version>7.0.0.Final</version> <!-- ou versão mais recente -->
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

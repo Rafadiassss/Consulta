@@ -27,6 +27,19 @@ public class PacienteService {
         return pacienteRepository.save(paciente);
     }
 
+    public Paciente atualizar(Long id, Paciente paciente) {
+    Optional<Paciente> pacienteExistente = pacienteRepository.findById(id);
+    
+    if (pacienteExistente.isPresent()) {
+        Paciente pacienteAtualizado = pacienteExistente.get();
+        pacienteAtualizado.setCpf(paciente.getCpf());
+        pacienteAtualizado.setConsultas(paciente.getConsultas());
+        return pacienteRepository.save(pacienteAtualizado);
+    } else {
+        throw new RuntimeException("Paciente não encontrado");
+    }
+}
+
     public void deletar(Long id) {
         pacienteRepository.deleteById(id);
     }

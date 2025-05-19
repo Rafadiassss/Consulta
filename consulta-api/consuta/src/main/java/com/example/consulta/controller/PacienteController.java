@@ -6,6 +6,7 @@ import com.example.consulta.service.PacienteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,8 +35,16 @@ public class PacienteController {
         return pacienteService.salvar(paciente);
     }
 
-    @DeleteMapping("/{id}")
-    public void deletar(@PathVariable Long id) {
-        pacienteService.deletar(id);
+    @PutMapping("/{id}")
+    public Paciente atualizar(@PathVariable Long id, @RequestBody Paciente paciente) {
+    return pacienteService.atualizar(id, paciente);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+    pacienteService.deletar(id);
+    return ResponseEntity.noContent().build();
+    }
+
 }
+

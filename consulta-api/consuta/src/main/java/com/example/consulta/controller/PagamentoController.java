@@ -34,8 +34,4 @@ public class PagamentoController {
         return pagamentoService.salvar(pagamento);
     }
 
-    @DeleteMapping("/{id}")
-    public void deletar(@PathVariable Long id) {
-        pagamentoService.deletar(id);
-    }
 }
