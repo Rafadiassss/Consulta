@@ -48,50 +48,52 @@ class ProntuarioControllerTest {
     }
 
     @BeforeEach
-    void setup() {
-        // Criando um médico
-        Usuario medico = new Usuario();
-        medico.setId(1L);
-        medico.setNome("Dr. João");
-        medico.setTipo("medico");
+void setup() {
+    // Criando um médico
+    Usuario medico = new Usuario();
+    medico.setId(1L);
+    medico.setNome("Dr. João");
+    medico.setTipo("medico");
 
-        // Configurando criarProntuario para médico (ID 1)
-        Mockito.when(prontuarioService.criarProntuario(eq(1L), any(Prontuario.class)))
-                .thenReturn(ResponseEntity.ok("Prontuário criado com sucesso"));
+    // Criando um usuário não-médico (id 2)
+    Usuario usuarioNaoMedico1 = new Usuario();
+    usuarioNaoMedico1.setId(2L);
+    usuarioNaoMedico1.setNome("João Silva");
+    usuarioNaoMedico1.setTipo("usuario");
 
-        // Criando um usuário não-médico (id 2)
-        Usuario usuarioNaoMedico1 = new Usuario();
-        usuarioNaoMedico1.setId(2L);
-        usuarioNaoMedico1.setNome("João Silva");
-        usuarioNaoMedico1.setTipo("usuario");
-        Mockito.when(prontuarioService.getUsuarioById(2L)).thenReturn(usuarioNaoMedico1);
+    // Criando usuário não-médico (ID 5)
+    Usuario usuarioNaoMedico2 = new Usuario();
+    usuarioNaoMedico2.setId(5L);
+    usuarioNaoMedico2.setNome("Maria Silva");
+    usuarioNaoMedico2.setTipo("usuario");
 
-        // Criando usuário não-médico (ID 5)
-        Usuario usuarioNaoMedico2 = new Usuario();
-        usuarioNaoMedico2.setId(3L);
-        usuarioNaoMedico2.setNome("Maria Silva");
-        usuarioNaoMedico2.setTipo("usuario");
-        Mockito.when(prontuarioService.getUsuarioById(5L)).thenReturn(usuarioNaoMedico2);
+    // Criando usuário não-médico (ID 6)
+    Usuario usuarioNaoMedico3 = new Usuario();
+    usuarioNaoMedico3.setId(6L);
+    usuarioNaoMedico3.setNome("Pedro Santos");
+    usuarioNaoMedico3.setTipo("usuario");
 
-        // Criando usuário não-médico (ID 6)
-        Usuario usuarioNaoMedico3 = new Usuario();
-        usuarioNaoMedico3.setId(4L);
-        usuarioNaoMedico3.setNome("Pedro Santos");
-        usuarioNaoMedico3.setTipo("usuario");
-        Mockito.when(prontuarioService.getUsuarioById(6L)).thenReturn(usuarioNaoMedico3);
+    // Mapeando os usuários mockados com seus IDs
+    Mockito.when(prontuarioService.getUsuarioById(1L)).thenReturn(medico);
+    Mockito.when(prontuarioService.getUsuarioById(2L)).thenReturn(usuarioNaoMedico1);
+    Mockito.when(prontuarioService.getUsuarioById(5L)).thenReturn(usuarioNaoMedico2);
+    Mockito.when(prontuarioService.getUsuarioById(6L)).thenReturn(usuarioNaoMedico3);
 
-        // Configurando criarProntuario para qualquer usuário
-        Mockito.when(prontuarioService.criarProntuario(anyLong(), any(Prontuario.class)))
-                .thenAnswer(invocation -> {
-                    Long idUsuario = invocation.getArgument(0);
-                    Usuario usuario = prontuarioService.getUsuarioById(idUsuario);
-                    if (usuario != null && "medico".equals(usuario.getTipo())) {
-                        return ResponseEntity.ok("Prontuário criado com sucesso");
-                    }
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas médicos podem criar prontuários");
-                });
+    // Mock da lógica de criação de prontuário dependendo do tipo do usuário
+    Mockito.when(prontuarioService.criarProntuario(anyLong(), any(Prontuario.class)))
+            .thenAnswer(invocation -> {
+                Long idUsuario = invocation.getArgument(0);
+                Usuario usuario = prontuarioService.getUsuarioById(idUsuario);
 
-    }
+                if (usuario != null && "medico".equals(usuario.getTipo())) {
+                    return ResponseEntity.ok("Prontuário criado com sucesso");
+                }
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Apenas médicos podem criar prontuários");
+            });
+}
+
 
     @Test
     void devePermitirCriarProntuarioParaMedico() throws Exception {
@@ -131,4 +133,23 @@ class ProntuarioControllerTest {
                 .content(json))
                 .andExpect(status().isForbidden()); // Espera-se um status 403 Forbidden
     }
+
+    @Test
+void deveRetornarNotFoundSeUsuarioNaoExistir() throws Exception {
+    String json = """
+            {
+                "numero": "99999",
+                "diagnostico": "Diabetes",
+                "tratamento": "Insulina",
+                "observacoes": "Revisar em 30 dias."
+            }
+            """;
+
+    // Não foi configurado getUsuarioById(7L) então o mock retornará null
+    mockMvc.perform(MockMvcRequestBuilders.post("/prontuarios/salvar/2")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json))
+            .andExpect(status().isForbidden()); 
+}
+
 }
