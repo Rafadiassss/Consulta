@@ -36,7 +36,7 @@ class ConsultaControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        consulta = new Consulta(); // você pode configurar atributos aqui se necessário
+        consulta = new Consulta();
         consulta.setId(1L);
     }
 
