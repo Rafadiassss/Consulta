@@ -11,7 +11,7 @@ public class Medico extends Usuario {
     private String especialidade;
 
     // Getters e Setters
-    
+
     public String getCrm() {
         return crm;
     }

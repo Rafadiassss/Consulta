@@ -74,7 +74,7 @@ public class Usuario {
         this.email = email;
     }
 
-        public String getTipo() {
+    public String getTipo() {
         return tipo;
     }
 
