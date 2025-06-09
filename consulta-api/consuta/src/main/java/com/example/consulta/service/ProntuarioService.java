@@ -5,6 +5,10 @@ import com.example.consulta.model.Prontuario;
 import com.example.consulta.model.Usuario;
 import com.example.consulta.repository.ProntuarioRepository;
 import com.example.consulta.repository.UsuarioRepository;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,9 @@ public class ProntuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
+    // Método para criar um prontuário (com validação de médico)
+    @CacheEvict(value = "prontuarios", allEntries = true) // Limpa o cache "prontuarios" na criação
+    @CachePut(value = "prontuario", key = "#prontuario.id") // Adiciona o novo prontuário no cache "prontuario"
     public ResponseEntity<String> criarProntuario(Long idUsuario, Prontuario prontuario) {
         System.out.println("Entrou no método criarProntuario");
         System.out.println("ID do Usuário: " + idUsuario);
@@ -52,6 +59,8 @@ public class ProntuarioService {
         return usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
 
+    // Método para buscar prontuário por ID (com validação de médico)
+    @Cacheable(value = "prontuario", key = "#idProntuario") // Tenta buscar do cache primeiro
     public ResponseEntity<?> buscarProntuario(Long idUsuario, Long idProntuario) {
         System.out.println("Entrou no método buscarProntuario");
         System.out.println("ID do Usuário: " + idUsuario);
@@ -79,6 +88,8 @@ public class ProntuarioService {
         return ResponseEntity.ok(prontuarioOpt.get());
     }
 
+    @CacheEvict(value = "prontuarios", allEntries = true) // Invalida o cache da lista de prontuários
+    @CachePut(value = "prontuario", key = "#idProntuario") // Atualiza o cache do prontuário específico
     public ResponseEntity<?> adicionarEntrada(Long idProntuario, EntradaProntuario novaEntrada) {
         // Busca o prontuário principal
         Optional<Prontuario> prontuarioOpt = prontuarioRepository.findById(idProntuario);
