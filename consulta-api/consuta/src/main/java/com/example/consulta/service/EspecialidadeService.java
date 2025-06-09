@@ -26,7 +26,20 @@ public class EspecialidadeService {
         return especialidadeRepository.save(especialidade);
     }
 
-    public void deletar(Long id) {
-        especialidadeRepository.deleteById(id);
+    public boolean deletar(Long id) {
+        if (especialidadeRepository.existsById(id)) {
+            especialidadeRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    public Optional<Especialidade> atualizar(Long id, Especialidade dadosNovos) {
+        return especialidadeRepository.findById(id)
+                .map(especialidadeExistente -> {
+                    especialidadeExistente.setNome(dadosNovos.getNome());
+                    // Adicione outros campos para atualizar se houver
+                    return especialidadeRepository.save(especialidadeExistente);
+                });
     }
 }

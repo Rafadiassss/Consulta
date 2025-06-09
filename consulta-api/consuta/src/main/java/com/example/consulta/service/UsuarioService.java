@@ -40,4 +40,25 @@ public class UsuarioService {
     public void deletar(Long id) {
         usuarioRepository.deleteById(id);
     }
+
+    public Optional<Usuario> atualizar(Long id, Usuario dadosNovos) {
+        // Busca o usuário no banco para garantir que ele existe.
+        Optional<Usuario> usuarioExistenteOptional = usuarioRepository.findById(id);
+
+        // Se o usuário não for encontrado, retorna um Optional vazio.
+        if (usuarioExistenteOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // Se encontrou atualiza os campos do objeto existente.
+        Usuario usuarioParaAtualizar = usuarioExistenteOptional.get();
+        usuarioParaAtualizar.setNome(dadosNovos.getNome());
+        usuarioParaAtualizar.setUsername(dadosNovos.getUsername());
+        usuarioParaAtualizar.setEmail(dadosNovos.getEmail());
+        usuarioParaAtualizar.setTelefone(dadosNovos.getTelefone());
+        usuarioParaAtualizar.setSenha(dadosNovos.getSenha());
+
+        // Salva o usuário com os dados atualizados e o retorna.
+        return Optional.of(usuarioRepository.save(usuarioParaAtualizar));
+    }
 }

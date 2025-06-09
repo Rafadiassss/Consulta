@@ -27,7 +27,24 @@ public class ExameService {
         return exameRepository.save(exame);
     }
 
-    public void deletar(Long id) {
-        exameRepository.deleteById(id);
+    public boolean deletar(Long id) {
+        if (exameRepository.existsById(id)) {
+            exameRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    public Optional<Exame> atualizar(Long id, Exame dadosNovos) {
+        return exameRepository.findById(id)
+                .map(exameExistente -> {
+                    // Copia os campos do objeto de entrada para o objeto do banco
+                    exameExistente.setNome(dadosNovos.getNome());
+                    exameExistente.setResultado(dadosNovos.getResultado());
+                    exameExistente.setObservacoes(dadosNovos.getObservacoes());
+                    exameExistente.setConsulta(dadosNovos.getConsulta()); // Atualiza a referência à consulta
+
+                    return exameRepository.save(exameExistente);
+                });
     }
 }

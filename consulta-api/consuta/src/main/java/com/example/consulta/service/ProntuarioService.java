@@ -1,5 +1,6 @@
 package com.example.consulta.service;
 
+import com.example.consulta.model.EntradaProntuario;
 import com.example.consulta.model.Prontuario;
 import com.example.consulta.model.Usuario;
 import com.example.consulta.repository.ProntuarioRepository;
@@ -8,9 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
-@Service 
+@Service
 public class ProntuarioService {
 
     private final ProntuarioRepository prontuarioRepository;
@@ -75,5 +77,27 @@ public class ProntuarioService {
 
         System.out.println("Prontuário encontrado: " + prontuarioOpt.get());
         return ResponseEntity.ok(prontuarioOpt.get());
+    }
+
+    public ResponseEntity<?> adicionarEntrada(Long idProntuario, EntradaProntuario novaEntrada) {
+        // Busca o prontuário principal
+        Optional<Prontuario> prontuarioOpt = prontuarioRepository.findById(idProntuario);
+
+        if (prontuarioOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Prontuário principal não encontrado.");
+        }
+
+        Prontuario prontuario = prontuarioOpt.get();
+
+        // Define a data atual para a nova entrada
+        novaEntrada.setDataEntrada(LocalDateTime.now());
+
+        // Adiciona a nova entrada ao histórico do prontuário
+        prontuario.adicionarEntrada(novaEntrada);
+
+        // Salva o prontuário com a nova entrada
+        Prontuario prontuarioAtualizado = prontuarioRepository.save(prontuario);
+
+        return ResponseEntity.ok(prontuarioAtualizado);
     }
 }
