@@ -6,6 +6,7 @@ import com.example.consulta.service.EspecialidadeService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,8 +26,9 @@ public class EspecialidadeController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Especialidade> buscarPorId(@PathVariable Long id) {
-        return especialidadeService.buscarPorId(id);
+    public ResponseEntity<Especialidade> buscarPorId(@PathVariable Long id) {
+        Optional<Especialidade> especialidade = especialidadeService.buscarPorId(id);
+        return especialidade.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
