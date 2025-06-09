@@ -6,14 +6,18 @@ import com.example.consulta.service.ExameService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.convert.EntityReader;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
+import javax.swing.text.html.parser.Entity;
+
 @RestController
 @RequestMapping("/exames")
-@Tag (name = "Exame", description = "Operações para gerenciar exames")
+@Tag(name = "Exame", description = "Operações para gerenciar exames")
 public class ExameController {
 
     @Autowired
@@ -25,8 +29,9 @@ public class ExameController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Exame> buscarPorId(@PathVariable Long id) {
-        return exameService.buscarPorId(id);
+    public ResponseEntity<Exame> buscarPorId(@PathVariable Long id) {
+        Optional<Exame> exame = exameService.buscarPorId(id);
+        return exame.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping

@@ -1,5 +1,6 @@
 package com.example.consulta.controller;
 
+import com.example.consulta.model.Agenda;
 import com.example.consulta.model.Medico;
 import com.example.consulta.model.Paciente;
 import com.example.consulta.model.Usuario;
@@ -24,12 +25,13 @@ public class UsuarioController {
 
     @GetMapping
     public List<Usuario> listarTodos() {
-    return usuarioService.listarTodos();
-}
+        return usuarioService.listarTodos();
+    }
 
     @GetMapping("/{id}")
-    public Optional<Usuario> buscarPorId(@PathVariable Long id) {
-        return usuarioService.buscarPorId(id);
+    public ResponseEntity<Usuario> buscarPorId(@PathVariable Long id) {
+        Optional<Usuario> usuario = usuarioService.buscarPorId(id);
+        return usuario.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping

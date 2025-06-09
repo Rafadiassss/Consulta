@@ -1,11 +1,13 @@
 package com.example.consulta.controller;
 
+import com.example.consulta.model.Agenda;
 import com.example.consulta.model.Pagamento;
 import com.example.consulta.service.PagamentoService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,8 +27,9 @@ public class PagamentoController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Pagamento> buscarPorId(@PathVariable Long id) {
-        return pagamentoService.buscarPorId(id);
+    public ResponseEntity<Pagamento> buscarPorId(@PathVariable Long id) {
+        Optional<Pagamento> pagamento = pagamentoService.buscarPorId(id);
+        return pagamento.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping

@@ -1,5 +1,6 @@
 package com.example.consulta.controller;
 
+import com.example.consulta.model.Exame;
 import com.example.consulta.model.Paciente;
 import com.example.consulta.service.PacienteService;
 
@@ -26,8 +27,9 @@ public class PacienteController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Paciente> buscarPorId(@PathVariable Long id) {
-        return pacienteService.buscarPorId(id);
+    public ResponseEntity<Paciente> buscarPorId(@PathVariable Long id) {
+        Optional<Paciente> paciente = pacienteService.buscarPorId(id);
+        return paciente.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -37,14 +39,13 @@ public class PacienteController {
 
     @PutMapping("/{id}")
     public Paciente atualizar(@PathVariable Long id, @RequestBody Paciente paciente) {
-    return pacienteService.atualizar(id, paciente);
+        return pacienteService.atualizar(id, paciente);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-    pacienteService.deletar(id);
-    return ResponseEntity.noContent().build();
+        pacienteService.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 
 }
-

@@ -1,14 +1,15 @@
 package com.example.consulta.controller;
 
-
 import com.example.consulta.model.Agenda;
 import com.example.consulta.service.AgendaService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,8 +27,10 @@ public class AgendaController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Agenda> buscarPorId(@PathVariable Long id) {
-        return agendaService.buscarPorId(id);
+    public ResponseEntity<Agenda> buscarPorId(@PathVariable Long id) {
+        Optional<Agenda> agenda = agendaService.buscarPorId(id);
+        return agenda.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+
     }
 
     @PostMapping
