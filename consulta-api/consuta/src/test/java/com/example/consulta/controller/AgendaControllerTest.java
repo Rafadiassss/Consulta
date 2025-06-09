@@ -85,7 +85,7 @@ class AgendaControllerTest {
     }
 
     @Test
-    void testQuandoBuscarPorIdInexistente_deveRetornarStatusNotFound() throws Exception {
+    void testBuscarPorIdInexistente() throws Exception {
         // Arrange
         when(agendaService.buscarPorId(anyLong())).thenReturn(Optional.empty());
 

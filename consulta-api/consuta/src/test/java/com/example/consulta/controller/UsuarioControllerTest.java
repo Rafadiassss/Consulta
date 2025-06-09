@@ -114,8 +114,6 @@ class UsuarioControllerTest {
                 .content(objectMapper.writeValueAsString(medico)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome", is("Dra. Ana")));
-        // O teste para 'crm' foi removido para garantir compatibilidade,
-        // já que o Usuario retornado pode não ter esse campo diretamente.
     }
 
     @Test
@@ -135,7 +133,7 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("Deve atualizar um usuário existente")
     void atualizarUsuario() throws Exception {
-        // Configura o mock do serviço para o método 'salvar', que é chamado pelo
+        // Configura o mock do serviço para o método 'salvar' que é chamado pelo
         // 'atualizar' do controller.
         when(usuarioService.salvar(any(Usuario.class))).thenReturn(usuario);
 
