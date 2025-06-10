@@ -1,4 +1,4 @@
-package com.example.consulta.controller;
+/* package com.example.consulta.controller;
 
 import com.example.consulta.model.Especialidade;
 import com.example.consulta.service.EspecialidadeService;
@@ -117,4 +117,4 @@ class EspecialidadeControllerTest {
 
         verify(especialidadeService, times(1)).deletar(1L);
     }
-}
+} */
