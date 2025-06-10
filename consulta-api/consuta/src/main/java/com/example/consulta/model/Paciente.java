@@ -8,14 +8,15 @@ import java.util.List;
 @Entity
 public class Paciente extends Usuario {
 
-    
+    @Column(name ="cpf")
     private String cpf;
+    @Column(name = "cartao_sus")
     private String cartaoSus;
   
     public Paciente() {}
-
-    public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha) {
-        
+ 
+    public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha, String cartaoSus) {
+        this.cartaoSus = cartaoSus;
         this.cpf = cpf;
     }
 

@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Service
 public class EspecialidadeService {
-
+ 
     @Autowired
     private EspecialidadeRepository especialidadeRepository;
 

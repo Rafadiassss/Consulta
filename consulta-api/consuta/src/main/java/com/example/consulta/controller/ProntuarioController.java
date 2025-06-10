@@ -13,7 +13,7 @@ public class ProntuarioController {
 
     public ProntuarioController(ProntuarioService prontuarioService) {
         this.prontuarioService = prontuarioService; 
-    }
+    } 
 
     @PostMapping("/salvar/{idUsuario}")
     public ResponseEntity<String> salvar(
