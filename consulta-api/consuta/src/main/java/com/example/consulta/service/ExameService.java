@@ -23,7 +23,7 @@ public class ExameService {
     @Autowired
     private ExameRepository exameRepository;
     @Autowired
-    private ConsultaRepository consultaRepository; // Adicionado para buscar a consulta
+    private ConsultaRepository consultaRepository;
 
     // Guarda a lista completa de exames no cache "exames".
     @Cacheable("exames")
@@ -41,8 +41,11 @@ public class ExameService {
     @Caching(evict = { @CacheEvict(value = "exames", allEntries = true) }, put = {
             @CachePut(value = "exame", key = "#result.id()") })
     public ExameVO salvar(ExameRequestDTO dto) {
+        // Converte o DTO para uma entidade, buscando a Consulta associada.
         Exame exame = toEntity(dto);
+        // Salva a nova entidade no banco de dados.
         Exame exameSalvo = exameRepository.save(exame);
+        // Converte a entidade salva para VO e a retorna.
         return toVO(exameSalvo);
     }
 
@@ -50,17 +53,22 @@ public class ExameService {
     @Caching(evict = { @CacheEvict(value = "exames", allEntries = true) }, put = {
             @CachePut(value = "exame", key = "#id") })
     public Optional<ExameVO> atualizar(Long id, ExameRequestDTO dto) {
+        // Busca o exame existente pelo ID.
         return exameRepository.findById(id)
                 .map(exameExistente -> {
+                    // Busca a entidade Consulta pelo ID fornecido no DTO.
                     Consulta consulta = consultaRepository.findById(dto.consultaId())
                             .orElseThrow(() -> new RuntimeException("Consulta não encontrada para o exame."));
 
+                    // Atualiza os campos do exame existente com os dados do DTO.
                     exameExistente.setNome(dto.nome());
                     exameExistente.setResultado(dto.resultado());
                     exameExistente.setObservacoes(dto.observacoes());
                     exameExistente.setConsulta(consulta);
 
+                    // Salva a entidade atualizada.
                     Exame exameAtualizado = exameRepository.save(exameExistente);
+                    // Converte e retorna o VO da entidade atualizada.
                     return toVO(exameAtualizado);
                 });
     }
@@ -71,15 +79,19 @@ public class ExameService {
             @CacheEvict(value = "exame", key = "#id")
     })
     public boolean deletar(Long id) {
+        // Verifica se o exame com o ID fornecido existe.
         if (exameRepository.existsById(id)) {
+            // Se existir, deleta e retorna true.
             exameRepository.deleteById(id);
             return true;
         }
+        // Se não existir, retorna false.
         return false;
     }
 
     // --- MÉTODOS DE MAPEAMENTO ---
 
+    // Converte uma Entidade 'Exame' para um 'ExameVO'.
     private ExameVO toVO(Exame exame) {
         Long consultaId = (exame.getConsulta() != null) ? exame.getConsulta().getId() : null;
         return new ExameVO(
@@ -90,6 +102,7 @@ public class ExameService {
                 consultaId);
     }
 
+    // Converte um 'ExameRequestDTO' para uma Entidade 'Exame'.
     private Exame toEntity(ExameRequestDTO dto) {
         // Busca a entidade Consulta pelo ID fornecido no DTO.
         Consulta consulta = consultaRepository.findById(dto.consultaId())
