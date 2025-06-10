@@ -20,8 +20,6 @@ public class EspecialidadeService {
     @Autowired
     private EspecialidadeRepository especialidadeRepository;
 
-    // --- MÉTODOS PÚBLICOS (AGORA RETORNAM VOs) ---
-
     public List<EspecialidadeVO> listarTodas() {
         return especialidadeRepository.findAll()
                 .stream()
@@ -40,10 +38,9 @@ public class EspecialidadeService {
         // Retorna o VO da entidade salva
         return toVO(especialidadeSalva);
     }
-    
+
     // O método atualizar recebe o DTO e retorna um DTO.
-    @Caching(
-            evict = { @CacheEvict(value = "especialidades", allEntries = true) }, // Limpa o cache da lista
+    @Caching(evict = { @CacheEvict(value = "especialidades", allEntries = true) }, // Limpa o cache da lista
             put = { @CachePut(value = "especialidade", key = "#id") } // Atualiza o item no cache individual
     )
     public Optional<EspecialidadeVO> atualizar(Long id, EspecialidadeRequestDTO dto) {
@@ -57,12 +54,10 @@ public class EspecialidadeService {
                 });
     }
 
-    @Caching(
-            evict = {
-                @CacheEvict(value = "especialidades", allEntries = true), // Limpa a lista inteira
-                @CacheEvict(value = "especialidade", key = "#id") // Remove o item específico
-            }
-    )
+    @Caching(evict = {
+            @CacheEvict(value = "especialidades", allEntries = true), // Limpa a lista inteira
+            @CacheEvict(value = "especialidade", key = "#id") // Remove o item específico
+    })
     public boolean deletar(Long id) {
         System.out.println("Deletando especialidade de ID " + id + "...");
         if (especialidadeRepository.existsById(id)) {
@@ -73,7 +68,7 @@ public class EspecialidadeService {
     }
 
     // --- MÉTODOS DE MAPEAMENTO ---
-    
+
     private Especialidade toEntity(EspecialidadeRequestDTO dto) {
         Especialidade especialidade = new Especialidade();
         especialidade.setNome(dto.nome());
@@ -81,7 +76,7 @@ public class EspecialidadeService {
         return especialidade;
     }
 
-     private EspecialidadeVO toVO(Especialidade especialidade) {
+    private EspecialidadeVO toVO(Especialidade especialidade) {
         return new EspecialidadeVO(
                 especialidade.getId(),
                 especialidade.getNome(),
