@@ -1,13 +1,13 @@
 package com.example.consulta.controller;
 
 import com.example.consulta.dto.ConsultaRequestDTO;
-import com.example.consulta.dto.ConsultaResponseDTO;
-import com.example.consulta.dto.MedicoDTO;
-import com.example.consulta.dto.PacienteDTO;
+import com.example.consulta.hateoas.ConsultaModelAssembler; // Importa o Assembler
 import com.example.consulta.service.ConsultaService;
 import com.example.consulta.vo.ConsultaVO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -16,6 +16,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping("/consultas")
 public class ConsultaController {
@@ -23,35 +26,55 @@ public class ConsultaController {
     @Autowired
     private ConsultaService consultaService;
 
+    // Injeta o assembler.
+    @Autowired
+    private ConsultaModelAssembler assembler;
+
     @GetMapping
-    public ResponseEntity<List<ConsultaResponseDTO>> listarTodas() {
-        List<ConsultaVO> listaVO = consultaService.listarTodas();
-        List<ConsultaResponseDTO> listaDTO = listaVO.stream().map(this::toResponseDTO).collect(Collectors.toList());
-        return ResponseEntity.ok(listaDTO);
+    public ResponseEntity<CollectionModel<EntityModel<ConsultaVO>>> listarTodas() {
+        // Busca a lista de VOs do serviço.
+        List<ConsultaVO> consultasVO = consultaService.listarTodas();
+        // Converte cada VO em um EntityModel usando o assembler.
+        List<EntityModel<ConsultaVO>> consultasModel = consultasVO.stream()
+                .map(assembler::toModel)
+                .collect(Collectors.toList());
+        // Cria um CollectionModel com os resultados e um link para a própria coleção.
+        CollectionModel<EntityModel<ConsultaVO>> collectionModel = CollectionModel.of(consultasModel,
+                linkTo(methodOn(ConsultaController.class).listarTodas()).withSelfRel());
+        // Retorna 200 OK com a coleção HATEOAS.
+        return ResponseEntity.ok(collectionModel);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ConsultaResponseDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<ConsultaVO>> buscarPorId(@PathVariable Long id) {
+        // Busca o VO do serviço.
         return consultaService.buscarPorId(id)
-                .map(this::toResponseDTO)
+                // Se encontrado converte para EntityModel com links.
+                .map(assembler::toModel)
+                // Envolve em uma resposta 200 OK.
                 .map(ResponseEntity::ok)
+                // Se não encontrado retorna 404 Not Found.
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<ConsultaResponseDTO> salvar(@RequestBody @Valid ConsultaRequestDTO dto) {
+    public ResponseEntity<EntityModel<ConsultaVO>> salvar(@RequestBody @Valid ConsultaRequestDTO dto) {
+        // Envia o DTO para o serviço e recebe o VO salvo.
         ConsultaVO consultaSalvaVO = consultaService.salvar(dto);
-        ConsultaResponseDTO responseDTO = toResponseDTO(consultaSalvaVO);
-        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
-                .buildAndExpand(responseDTO.id()).toUri();
-        return ResponseEntity.created(uri).body(responseDTO);
+        // Converte o VO para um EntityModel.
+        EntityModel<ConsultaVO> consultaModel = assembler.toModel(consultaSalvaVO);
+        // Retorna 201 Created com a URI do novo recurso e o modelo no corpo.
+        return ResponseEntity
+                .created(consultaModel.getRequiredLink("self").toUri())
+                .body(consultaModel);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ConsultaResponseDTO> atualizar(@PathVariable Long id,
+    public ResponseEntity<EntityModel<ConsultaVO>> atualizar(@PathVariable Long id,
             @RequestBody @Valid ConsultaRequestDTO dto) {
+        // Chama o serviço de atualização.
         return consultaService.atualizar(id, dto)
-                .map(this::toResponseDTO)
+                .map(assembler::toModel)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -60,28 +83,5 @@ public class ConsultaController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         consultaService.deletar(id);
         return ResponseEntity.noContent().build();
-    }
-
-    // --- MÉTODO DE MAPEAMENTO DO CONTROLLER ---
-
-    private ConsultaResponseDTO toResponseDTO(ConsultaVO vo) {
-        PacienteDTO pacienteDTO = new PacienteDTO(
-                vo.paciente().getId(),
-                vo.paciente().getNome());
-        MedicoDTO medicoDTO = new MedicoDTO(
-                vo.medico().getId(),
-                vo.medico().getNome(),
-                vo.medico().getEspecialidade() // Supondo que Medico tenha getEspecialidade()
-        );
-        Long pagamentoId = (vo.pagamento() != null) ? vo.pagamento().getId() : null;
-
-        return new ConsultaResponseDTO(
-                vo.id(),
-                vo.data(),
-                vo.status(),
-                vo.nomeConsulta(),
-                pacienteDTO,
-                medicoDTO,
-                pagamentoId);
     }
 }
