@@ -19,10 +19,6 @@ public class Pagamento {
     private String formaPagamento;
     private String status;
 
-    @ManyToOne
-    @JoinColumn(name = "consulta_id")
-    @JsonBackReference
-    private Consulta consulta;
 
     // Construtores
     public Pagamento() {}
@@ -71,13 +67,6 @@ public class Pagamento {
         this.status = status;
     }
 
-    public Consulta getConsulta() {
-        return consulta;
-    }
-
-    public void setConsulta(Consulta consulta) {
-        this.consulta = consulta;
-    }
 
     // Método para confirmar pagamento
     public void confirmarPagamento() {

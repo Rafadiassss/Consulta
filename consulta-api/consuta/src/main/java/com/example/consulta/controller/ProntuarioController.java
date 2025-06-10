@@ -21,7 +21,7 @@ public class ProntuarioController {
         @RequestBody Prontuario prontuario) {
 
     return prontuarioService.criarProntuario(idUsuario, prontuario);
-}
+} 
     @GetMapping("/buscar/{idUsuario}/{idProntuario}")
     public ResponseEntity<?> buscarProntuario(
             @PathVariable Long idUsuario,

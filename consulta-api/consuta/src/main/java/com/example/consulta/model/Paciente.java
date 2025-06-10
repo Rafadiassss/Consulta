@@ -10,12 +10,8 @@ public class Paciente extends Usuario {
 
     
     private String cpf;
+    private String cartaoSus;
   
-
-    @OneToMany(mappedBy = "paciente")
-    private List<Consulta> consultas;
-
-    // Construtores
     public Paciente() {}
 
     public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha) {
@@ -33,16 +29,12 @@ public class Paciente extends Usuario {
         this.cpf = cpf;
     }
 
-    public List<Consulta> getConsultas() {
-        return consultas;
+    public String getCartaoSus() {
+        return cartaoSus;
     }
 
-    public void setConsultas(List<Consulta> consultas) {
-        this.consultas = consultas;
+    public void setCartaoSus(String cartaoSus) {
+        this.cartaoSus = cartaoSus;
     }
 
-    // Método para listar consultas
-    public List<Consulta> listarConsultas() {
-        return consultas;
-    }
 }

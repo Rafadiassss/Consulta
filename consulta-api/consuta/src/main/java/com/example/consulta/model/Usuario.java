@@ -26,6 +26,8 @@ public class Usuario {
     private String email;
     private LocalDate dataNascimento;
 
+
+    
     public Long getId() {
         return id;
     }

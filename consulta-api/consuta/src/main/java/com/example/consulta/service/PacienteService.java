@@ -33,7 +33,6 @@ public class PacienteService {
     if (pacienteExistente.isPresent()) {
         Paciente pacienteAtualizado = pacienteExistente.get();
         pacienteAtualizado.setCpf(paciente.getCpf());
-        pacienteAtualizado.setConsultas(paciente.getConsultas());
         return pacienteRepository.save(pacienteAtualizado);
     } else {
         throw new RuntimeException("Paciente não encontrado");

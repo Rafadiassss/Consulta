@@ -8,8 +8,8 @@ public class Prontuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    private Long id; 
+ 
     private String numero;
     private String diagnostico;
     private String tratamento;
@@ -19,6 +19,13 @@ public class Prontuario {
     @JsonIgnore
     private Consulta consulta;  // Relacionamento bidirecional
 
+    @ManyToOne
+    @JoinColumn(name = "medico_id")
+    private Usuario medico;
+
+    @ManyToOne
+    @JoinColumn(name = "paciente_id")
+    private Usuario paciente;
     // Construtor padrão
     public Prontuario() {}
 
@@ -31,8 +38,25 @@ public class Prontuario {
     }
 
     // Getters e Setters
+    
     public Long getId() {
         return id;
+    }
+
+    public Usuario getMedico() {
+        return medico;
+    }
+
+    public void setMedico(Usuario medico) {
+        this.medico = medico;
+    }
+
+    public Usuario getPaciente() {
+        return paciente;
+    }
+
+    public void setPaciente(Usuario paciente) {
+        this.paciente = paciente;
     }
 
     public void setId(Long id) {
