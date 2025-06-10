@@ -21,7 +21,8 @@ public class Pagamento {
 
 
     // Construtores
-    public Pagamento() {}
+    public Pagamento() {
+    }
 
     public Pagamento(LocalDate dataPagamento, BigDecimal valorPago, String formaPagamento, String status) {
         this.dataPagamento = dataPagamento;

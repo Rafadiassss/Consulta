@@ -20,7 +20,15 @@ public class Agenda {
     private List<LocalTime> horarios = new ArrayList<>();
 
     // Construtores
-    public Agenda() {}
+    public Agenda() {
+    }
+
+    // Adicione este construtor na sua classe Agenda.java
+    public Agenda(Long id, LocalDate dataAgendada, List<LocalTime> horarios) {
+        this.id = id;
+        this.dataAgendada = dataAgendada;
+        this.horarios = horarios;
+    }
 
     public Agenda(LocalDate dataAgendada) {
         this.dataAgendada = dataAgendada;
@@ -29,6 +37,10 @@ public class Agenda {
     // Getters e Setters
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public LocalDate getDataAgendada() {

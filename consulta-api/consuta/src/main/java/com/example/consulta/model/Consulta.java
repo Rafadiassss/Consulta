@@ -2,7 +2,6 @@ package com.example.consulta.model;
 
 import jakarta.persistence.*;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-@Entity 
+
+@Entity
 public class Consulta {
 
     @Id
@@ -36,16 +36,15 @@ public class Consulta {
     @JoinColumn(name = "pagamento_id")
     private Pagamento pagamento;
 
-
-    @OneToOne(cascade = CascadeType.PERSIST)  // Usando CascadeType.PERSIST para garantir persistência do prontuário
+    @OneToOne(cascade = CascadeType.PERSIST) // Usando CascadeType.PERSIST para garantir persistência do prontuário
     @JoinColumn(name = "prontuario_id")
     private Prontuario prontuario;
 
-    
     private String nomeConsulta;
 
     // Construtores
-    public Consulta() {}
+    public Consulta() {
+    }
 
     public Consulta(String nomeConsulta) {
         this.nomeConsulta = nomeConsulta;
@@ -101,9 +100,9 @@ public class Consulta {
 
     public void setProntuario(Prontuario prontuario) {
         this.prontuario = prontuario;
-        if (prontuario != null) {
-            prontuario.setConsulta(this);  // Estabelece a relação bidirecional
-        }
+        // if (prontuario != null) {
+        // prontuario.setConsulta(this); // Estabelece a relação bidirecional
+        // }
     }
 
     public String getNomeConsulta() {
@@ -126,5 +125,4 @@ public class Consulta {
         this.pagamento = pagamento;
     }
 
-   
 }

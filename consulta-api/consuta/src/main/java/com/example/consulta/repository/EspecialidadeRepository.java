@@ -7,6 +7,4 @@ import com.example.consulta.model.Especialidade;
 
 @Repository
 public interface EspecialidadeRepository extends JpaRepository<Especialidade, Long> {
-    // Aqui você pode adicionar métodos personalizados, se necessário
-    
 }

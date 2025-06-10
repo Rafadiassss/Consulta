@@ -17,11 +17,12 @@ public class Paciente extends Usuario {
  
     public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha, String cartaoSus) {
         this.cartaoSus = cartaoSus;
+
         this.cpf = cpf;
     }
 
     // Getters e Setters
-   
+
     public String getCpf() {
         return cpf;
     }
@@ -37,5 +38,6 @@ public class Paciente extends Usuario {
     public void setCartaoSus(String cartaoSus) {
         this.cartaoSus = cartaoSus;
     }
-
 }
+
+
