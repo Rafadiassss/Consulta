@@ -3,8 +3,12 @@ package com.example.consulta.controller;
 import com.example.consulta.dto.EspecialidadeRequestDTO;
 import com.example.consulta.dto.EspecialidadeResponseDTO;
 import com.example.consulta.service.EspecialidadeService;
+import com.example.consulta.vo.EspecialidadeVO;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +16,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/especialidades")
@@ -24,27 +29,25 @@ public class EspecialidadeController {
     @GetMapping
     public ResponseEntity<List<EspecialidadeResponseDTO>> listar() {
         // Chama o serviço para buscar todas as especialidades.
-        List<EspecialidadeResponseDTO> listaDeDTOs = especialidadeService.listarTodas();
-        // Retorna a lista dentro de uma resposta HTTP com status 200 OK.
-        return ResponseEntity.ok(listaDeDTOs);
-    }
 
+        List<EspecialidadeVO> listaVO = especialidadeService.listarTodas();
+        List<EspecialidadeResponseDTO> listaDTO = listaVO.stream().map(this::toResponseDTO)
+                .collect(Collectors.toList());
+        // Retorna a resposta OK com a lista de DTOs
+        return ResponseEntity.ok(listaDTO);
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<EspecialidadeResponseDTO> buscarPorId(@PathVariable Long id) {
-        // Chama o serviço para buscar uma especialidade pelo ID.
-        return especialidadeService.buscarPorId(id)
-                // Se o Optional retornado pelo serviço contiver um valor, o map é executado.
-                // 'ResponseEntity::ok' cria uma resposta 200 OK com o DTO no corpo.
-                .map(ResponseEntity::ok)
-                // Se o Optional estiver vazio, 'orElse' é executado, criando uma resposta 404 Not Found.
+        return especialidadeService.buscarPorId(id) // Recebe Optional<EspecialidadeVO>
+                .map(this::toResponseDTO)           // Converte o VO para DTO de resposta
+                .map(ResponseEntity::ok)            // Cria a resposta OK
                 .orElse(ResponseEntity.notFound().build());
     }
-
     @PostMapping
-    public ResponseEntity<EspecialidadeResponseDTO> salvar(@RequestBody @Valid EspecialidadeRequestDTO dto) {
-        // A anotação @Valid aciona as validações definidas no DTO (ex: @NotBlank).
-        // Chama o serviço para salvar a nova especialidade, passando o DTO recebido.
-        EspecialidadeResponseDTO especialidadeSalva = especialidadeService.salvar(dto);
+    public ResponseEntity<EspecialidadeVO> salvar(@RequestBody @Valid EspecialidadeRequestDTO dto) {
+        // Chama o serviço para salvar a nova especialidade, passando o VO recebido.
+        EspecialidadeVO especialidadeSalva = especialidadeService.salvar(dto);
 
         // Constrói a URI para o novo recurso criado, que será retornada no header 'Location'.
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
@@ -64,5 +67,16 @@ public class EspecialidadeController {
             // Se o serviço retornou 'false' (não encontrou o ID), envia uma resposta 404 Not Found.
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // --- MÉTODO DE MAPEAMENTO DO CONTROLLER ---
+
+    // Converte VO para DTO de resposta
+    private EspecialidadeResponseDTO toResponseDTO(EspecialidadeVO vo) {
+        return new EspecialidadeResponseDTO(
+            vo.id(),
+            vo.nome(),
+            vo.descricao()
+        );
     }
 }
