@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Entity
+@DiscriminatorValue("PACIENTE") // O valor na coluna 'dtype' para um paciente
 public class Paciente extends Usuario {
 
     private String cpf;

@@ -5,6 +5,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
 @Table(name = "usuarios")

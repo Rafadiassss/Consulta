@@ -3,6 +3,8 @@ package com.example.consulta.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
+import jakarta.persistence.DiscriminatorValue;
+
 @Entity
 @DiscriminatorValue("MEDICO")
 public class Medico extends Usuario {
