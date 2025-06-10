@@ -1,16 +1,19 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.MedicoRequestDTO;
+import com.example.consulta.model.Medico;
+import com.example.consulta.repository.MedicoRepository;
+import com.example.consulta.vo.MedicoVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
-
-import com.example.consulta.model.Medico;
-import com.example.consulta.repository.MedicoRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MedicoService {
@@ -18,24 +21,75 @@ public class MedicoService {
     @Autowired
     private MedicoRepository medicoRepository;
 
-    @Cacheable(value = "medicos") // Cacheia a lista completa de médicos
-    public List<Medico> listarTodos() {
-        return medicoRepository.findAll();
+    @Cacheable("medicos")
+    public List<MedicoVO> listarTodos() {
+        return medicoRepository.findAll().stream().map(this::toVO).collect(Collectors.toList());
     }
 
-    @Cacheable(value = "medico", key = "#id") // Cacheia um médico individual pelo ID
-    public Optional<Medico> buscarPorId(Long id) {
-        return medicoRepository.findById(id);
+    @Cacheable(value = "medico", key = "#id")
+    public Optional<MedicoVO> buscarPorId(Long id) {
+        return medicoRepository.findById(id).map(this::toVO);
     }
 
-    @CacheEvict(value = "medicos", allEntries = true) // Limpa o cache de "medicos" quando um novo médico é salvo
-    @CachePut(value = "medico", key = "#medico.id") // Atualiza o cache de "medico" para o ID específico
-    public Medico salvar(Medico medico) {
-        return medicoRepository.save(medico);
+    @Caching(evict = { @CacheEvict(value = "medicos", allEntries = true) }, put = {
+            @CachePut(value = "medico", key = "#result.id()") })
+    public MedicoVO salvar(MedicoRequestDTO dto) {
+        Medico medico = toEntity(dto);
+        Medico medicoSalvo = medicoRepository.save(medico);
+        return toVO(medicoSalvo);
     }
 
-    @CacheEvict(value = { "medicos", "medico" }, allEntries = true) // Limpa caches relevantes na exclusão
-    public void deletar(Long id) {
-        medicoRepository.deleteById(id);
+    @Caching(evict = { @CacheEvict(value = "medicos", allEntries = true) }, put = {
+            @CachePut(value = "medico", key = "#id") })
+    public Optional<MedicoVO> atualizar(Long id, MedicoRequestDTO dto) {
+        return medicoRepository.findById(id)
+                .map(medicoExistente -> {
+                    medicoExistente.setNome(dto.nome());
+                    medicoExistente.setUsername(dto.username());
+                    medicoExistente.setEmail(dto.email());
+                    medicoExistente.setTelefone(dto.telefone());
+                    medicoExistente.setCrm(dto.crm());
+                    medicoExistente.setEspecialidade(dto.especialidade());
+                    Medico medicoAtualizado = medicoRepository.save(medicoExistente);
+                    return toVO(medicoAtualizado);
+                });
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = "medicos", allEntries = true),
+            @CacheEvict(value = "medico", key = "#id")
+    })
+    public boolean deletar(Long id) {
+        if (medicoRepository.existsById(id)) {
+            medicoRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    // --- MÉTODOS DE MAPEAMENTO ---
+
+    private MedicoVO toVO(Medico medico) {
+        return new MedicoVO(
+                medico.getId(),
+                medico.getNome(),
+                medico.getUsername(),
+                medico.getEmail(),
+                medico.getTelefone(),
+                medico.getCrm(),
+                medico.getEspecialidade());
+    }
+
+    private Medico toEntity(MedicoRequestDTO dto) {
+        Medico medico = new Medico();
+        medico.setNome(dto.nome());
+        medico.setUsername(dto.username());
+        medico.setSenha(dto.senha()); // Lembre-se de codificar a senha em um cenário real!
+        medico.setEmail(dto.email());
+        medico.setTelefone(dto.telefone());
+        medico.setCrm(dto.crm());
+        medico.setEspecialidade(dto.especialidade());
+        medico.setTipo("MEDICO"); // Define o tipo
+        return medico;
     }
 }
