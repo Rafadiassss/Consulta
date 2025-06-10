@@ -8,7 +8,8 @@ import java.time.LocalDate;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
 @Table(name = "usuarios")
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+//@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "dtype")
 public class Usuario {
     @Id
@@ -26,6 +27,8 @@ public class Usuario {
     private String email;
     private LocalDate dataNascimento;
 
+
+    
     public Long getId() {
         return id;
     }

@@ -13,8 +13,9 @@ public class ProntuarioController {
     private final ProntuarioService prontuarioService;
 
     public ProntuarioController(ProntuarioService prontuarioService) {
-        this.prontuarioService = prontuarioService;
-    }
+        this.prontuarioService = prontuarioService; 
+    } 
+
 
     @PostMapping("/salvar/{idUsuario}")
     public ResponseEntity<String> salvar(
@@ -23,6 +24,8 @@ public class ProntuarioController {
 
         return prontuarioService.criarProntuario(idUsuario, prontuario);
     }
+    return prontuarioService.criarProntuario(idUsuario, prontuario);
+} 
 
     @GetMapping("/buscar/{idUsuario}/{idProntuario}")
     public ResponseEntity<?> buscarProntuario(
