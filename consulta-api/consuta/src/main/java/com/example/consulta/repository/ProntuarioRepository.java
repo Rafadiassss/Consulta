@@ -8,4 +8,4 @@ import com.example.consulta.model.Prontuario;
 @Repository
 public interface ProntuarioRepository extends JpaRepository<Prontuario, Long> {
 
-}   
+} 

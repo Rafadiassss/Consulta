@@ -2,17 +2,13 @@ package com.example.consulta.model;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 
 @Entity
 @DiscriminatorValue("MEDICO")
 public class Medico extends Usuario {
 
     private String crm;
-    @ManyToOne
-    @JoinColumn(name = "especialidade_id")
-    private Especialidade especialidade; 
+    private String especialidade;
 
     // Getters e Setters
 
@@ -24,13 +20,12 @@ public class Medico extends Usuario {
         this.crm = crm;
     }
 
-    public Especialidade getEspecialidade() {
+    public String getEspecialidade() {
         return especialidade;
     }
 
-    public void setEspecialidade(Especialidade especialidade) {
+    public void setEspecialidade(String especialidade) {
         this.especialidade = especialidade;
     }
-    
 
 }

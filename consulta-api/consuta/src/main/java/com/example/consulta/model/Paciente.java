@@ -8,15 +8,16 @@ import java.util.List;
 @Entity
 public class Paciente extends Usuario {
 
-    @Column(name ="cpf")
     private String cpf;
-    @Column(name = "cartao_sus")
-    private String cartaoSus;
-  
-    public Paciente() {}
- 
-    public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha, String cartaoSus) {
-        this.cartaoSus = cartaoSus;
+
+    @OneToMany(mappedBy = "paciente")
+    private List<Consulta> consultas;
+
+    // Construtores
+    public Paciente() {
+    }
+
+    public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha) {
 
         this.cpf = cpf;
     }
@@ -31,13 +32,16 @@ public class Paciente extends Usuario {
         this.cpf = cpf;
     }
 
-    public String getCartaoSus() {
-        return cartaoSus;
+    public List<Consulta> getConsultas() {
+        return consultas;
     }
 
-    public void setCartaoSus(String cartaoSus) {
-        this.cartaoSus = cartaoSus;
+    public void setConsultas(List<Consulta> consultas) {
+        this.consultas = consultas;
+    }
+
+    // Método para listar consultas
+    public List<Consulta> listarConsultas() {
+        return consultas;
     }
 }
-
-

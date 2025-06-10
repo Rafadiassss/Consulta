@@ -27,7 +27,9 @@ public class PacienteService {
     public Optional<Paciente> buscarPorId(Long id) {
         return pacienteRepository.findById(id);
     }
-  
+
+    @CacheEvict(value = "pacientes", allEntries = true) // Limpa o cache "pacientes" na criação
+    @CachePut(value = "paciente", key = "#paciente.id") // Adiciona/atualiza o paciente no cache "paciente"
     public Paciente salvar(Paciente paciente) {
         return pacienteRepository.save(paciente);
     }
@@ -35,15 +37,16 @@ public class PacienteService {
     @CacheEvict(value = "pacientes", allEntries = true) // Limpa o cache de todos os pacientes
     @CachePut(value = "paciente", key = "#id") // Atualiza o cache de um paciente específico
     public Paciente atualizar(Long id, Paciente paciente) {
-    Optional<Paciente> pacienteExistente = pacienteRepository.findById(id);
-    
-    if (pacienteExistente.isPresent()) {
-        Paciente pacienteAtualizado = pacienteExistente.get();
-        pacienteAtualizado.setCpf(paciente.getCpf());
-        return pacienteRepository.save(pacienteAtualizado);
-    } else {
-        throw new RuntimeException("Paciente não encontrado");
+        Optional<Paciente> pacienteExistente = pacienteRepository.findById(id);
 
+        if (pacienteExistente.isPresent()) {
+            Paciente pacienteAtualizado = pacienteExistente.get();
+            pacienteAtualizado.setCpf(paciente.getCpf());
+            pacienteAtualizado.setConsultas(paciente.getConsultas());
+            return pacienteRepository.save(pacienteAtualizado);
+        } else {
+            throw new RuntimeException("Paciente não encontrado");
+        }
     }
 
     @CacheEvict(value = { "pacientes", "paciente" }, allEntries = true) // Limpa caches na exclusão
