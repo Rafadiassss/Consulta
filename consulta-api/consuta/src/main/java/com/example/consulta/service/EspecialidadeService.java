@@ -1,15 +1,19 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.EspecialidadeRequestDTO;
+import com.example.consulta.dto.EspecialidadeResponseDTO;
 import com.example.consulta.model.Especialidade;
 import com.example.consulta.repository.EspecialidadeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class EspecialidadeService {
@@ -17,41 +21,58 @@ public class EspecialidadeService {
     @Autowired
     private EspecialidadeRepository especialidadeRepository;
 
-    // A primeira vez que esse metodo for chamado ele executa e guarda a lista no
-    // cache, e nas proximas chamadas do metodo, ele retorna a lista diretamente do
-    // cache
-    @Cacheable("especialidades")
-    public List<Especialidade> listarTodas() {
-        // Log para depuração do cache
-        System.out.println("Buscando especialidades no banco...");
-        return especialidadeRepository.findAll();
+    @Cacheable("especialidades") // Cache para a lista completa
+    public List<EspecialidadeResponseDTO> listarTodas() {
+        System.out.println("Buscando TODAS as especialidades no banco...");
+        return especialidadeRepository.findAll()
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
-    // Basicamente aqui cada especialidade com seu id vai ser armazenada em cache
-    // qunando esse metodo for chamado. O "key" é onde vai ser armazenda o ID da
-    // especialidade em cache
-    @Cacheable(value = "especialidades", key = "#id")
-    public Optional<Especialidade> buscarPorId(Long id) {
-        // Log para depuração do cache
+    @Cacheable(value = "especialidade", key = "#id") // Cache para itens individuais
+    public Optional<EspecialidadeResponseDTO> buscarPorId(Long id) {
         System.out.println("Buscando especialidade de ID " + id + " no banco...");
-        return especialidadeRepository.findById(id);
+        return especialidadeRepository.findById(id).map(this::toResponseDTO);
     }
 
-    // Quando salvar uma nova especialidade, o cache onde guarda a lista completa de
-    // todas as especialidades precisa ser limpo e incluir essa nova especialidades.
-    // O 'allEntries=ture' faz essa limpeza do cache 'especialidades'
-    @CacheEvict(value = "especialidades", allEntries = true)
-    // Adiciona/atualiza a especialidade no cache "especialidade"
-    @CachePut(value = "especialidade", key = "#especialidade.id")
-    public Especialidade salvar(Especialidade especialidade) {
-        return especialidadeRepository.save(especialidade);
+
+    // O método salvar recebe o DTO de requisição.
+    @Caching(
+            evict = { @CacheEvict(value = "especialidades", allEntries = true) }, // Limpa o cache da lista
+            put = { @CachePut(value = "especialidade", key = "#result.id()") } // Adiciona/atualiza o item salvo no cache individual
+    )
+    public EspecialidadeResponseDTO salvar(EspecialidadeRequestDTO dto) {
+        System.out.println("Salvando nova especialidade...");
+        Especialidade especialidade = toEntity(dto);
+        Especialidade especialidadeSalva = especialidadeRepository.save(especialidade);
+        return toResponseDTO(especialidadeSalva);
+    }
+    
+    // O método atualizar recebe o DTO e retorna um DTO.
+    @Caching(
+            evict = { @CacheEvict(value = "especialidades", allEntries = true) }, // Limpa o cache da lista
+            put = { @CachePut(value = "especialidade", key = "#id") } // Atualiza o item no cache individual
+    )
+    public Optional<EspecialidadeResponseDTO> atualizar(Long id, EspecialidadeRequestDTO dto) {
+        System.out.println("Atualizando especialidade de ID " + id + "...");
+        return especialidadeRepository.findById(id)
+                .map(especialidadeExistente -> {
+                    especialidadeExistente.setNome(dto.nome());
+                    especialidadeExistente.setDescricao(dto.descricao());
+                    Especialidade especialidadeAtualizada = especialidadeRepository.save(especialidadeExistente);
+                    return toResponseDTO(especialidadeAtualizada);
+                });
     }
 
-    // Quando o delete for executado, é limpado a lista completa de 'especialidades'
-    // quanto a entrada especifica do chache 'especialidade' que corresponde ao ID
-    // deletado
-    @CacheEvict(value = { "especialidades", "especialidade" }, key = "#id", allEntries = true)
+    @Caching(
+            evict = {
+                @CacheEvict(value = "especialidades", allEntries = true), // Limpa a lista inteira
+                @CacheEvict(value = "especialidade", key = "#id") // Remove o item específico
+            }
+    )
     public boolean deletar(Long id) {
+        System.out.println("Deletando especialidade de ID " + id + "...");
         if (especialidadeRepository.existsById(id)) {
             especialidadeRepository.deleteById(id);
             return true;
@@ -59,15 +80,19 @@ public class EspecialidadeService {
         return false;
     }
 
-    // Ao atualizar também é limpado a lista completa para refletir a mudança.
-    // E também é limpado o cache específico da especialidade que foi alterada.
-    @CacheEvict(value = { "especialidades", "especialidade" }, allEntries = true)
-    public Optional<Especialidade> atualizar(Long id, Especialidade dadosNovos) {
-        return especialidadeRepository.findById(id)
-                .map(especialidadeExistente -> {
-                    especialidadeExistente.setNome(dadosNovos.getNome());
-                    // Adicione outros campos para atualizar se houver
-                    return especialidadeRepository.save(especialidadeExistente);
-                });
+    // --- MÉTODOS DE MAPEAMENTO ---
+
+    private Especialidade toEntity(EspecialidadeRequestDTO dto) {
+        Especialidade especialidade = new Especialidade();
+        especialidade.setNome(dto.nome());
+        especialidade.setDescricao(dto.descricao());
+        return especialidade;
+    }
+
+     private EspecialidadeResponseDTO toResponseDTO(Especialidade especialidade) {
+        return new EspecialidadeResponseDTO(
+                especialidade.getId(),
+                especialidade.getNome(),
+                especialidade.getDescricao());
     }
 }
