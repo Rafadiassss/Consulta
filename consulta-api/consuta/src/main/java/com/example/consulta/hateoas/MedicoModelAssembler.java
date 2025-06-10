@@ -1,25 +1,31 @@
 package com.example.consulta.hateoas;
 
 import com.example.consulta.controller.MedicoController;
-import com.example.consulta.model.Medico;
+import com.example.consulta.vo.MedicoVO; // Importa o VO
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.stereotype.Component;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @Component
-public class MedicoModelAssembler {
+public class MedicoModelAssembler implements RepresentationModelAssembler<MedicoVO, EntityModel<MedicoVO>> {
 
-    public EntityModel<Medico> toModel(Medico medico) {
-        EntityModel<Medico> medicoModel = EntityModel.of(medico);
-        Link selfLink = linkTo(methodOn(MedicoController.class).buscarPorId(medico.getId())).withSelfRel();
-        Link allLink = linkTo(methodOn(MedicoController.class).listar()).withRel("all");
-        Link createLink = linkTo(methodOn(MedicoController.class).salvar(null)).withRel("create");
-        Link updateLink = linkTo(methodOn(MedicoController.class).atualizar(medico.getId(), null)).withRel("update");
-        Link deleteLink = linkTo(methodOn(MedicoController.class).deletar(medico.getId())).withRel("delete");
-        medicoModel.add(selfLink, allLink, createLink, updateLink, deleteLink);
+    @Override
+    public EntityModel<MedicoVO> toModel(MedicoVO medicoVO) {
+        // Cria um EntityModel envolvendo o VO do médico.
+        EntityModel<MedicoVO> medicoModel = EntityModel.of(medicoVO,
+                // Adiciona um link para o próprio recurso. Ex: /medicos/1
+                linkTo(methodOn(MedicoController.class).buscarPorId(medicoVO.id())).withSelfRel(),
+                // Adiciona um link para a coleção de todos os médicos. Ex: /medicos
+                linkTo(methodOn(MedicoController.class).listar()).withRel("medicos"));
+
+        // Adicionando os links de ações possíveis, como no seu original.
+        // Passamos 'null' para os @RequestBody pois só queremos gerar a URL.
+        medicoModel.add(linkTo(methodOn(MedicoController.class).salvar(null)).withRel("create"));
+        medicoModel.add(linkTo(methodOn(MedicoController.class).atualizar(medicoVO.id(), null)).withRel("update"));
+        medicoModel.add(linkTo(methodOn(MedicoController.class).deletar(medicoVO.id())).withRel("delete"));
+
         return medicoModel;
     }
 }
