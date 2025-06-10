@@ -44,12 +44,11 @@ public class ProntuarioService {
 
         Usuario usuario = usuarioOpt.get();
 
-        if (!"MEDICO".equals(usuario.getTipo())) {
+        if (!"MÉDICO".equals(usuario.getTipo())) {
             System.out.println("Usuário não é médico.");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas médicos podem criar prontuários.");
         }
 
-        prontuario.setMedico(usuario);
         prontuarioRepository.save(prontuario);
         System.out.println("Prontuário salvo com ID: " + prontuario.getId());
 

@@ -33,11 +33,9 @@ public class PacienteController {
     }
 
     @PostMapping
-   public Paciente salvar(@RequestBody Paciente paciente) {
-        System.out.println("CPF: " + paciente.getCpf());
-        System.out.println("Cartão SUS: " + paciente.getCartaoSus()); // <- teste aqui
+    public Paciente salvar(@RequestBody Paciente paciente) {
         return pacienteService.salvar(paciente);
-}
+    }
 
     @PutMapping("/{id}")
     public Paciente atualizar(@PathVariable Long id, @RequestBody Paciente paciente) {
