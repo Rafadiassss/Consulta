@@ -1,40 +1,75 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.ExameRequestDTO;
+import com.example.consulta.model.Consulta;
+import com.example.consulta.model.Exame;
+import com.example.consulta.repository.ConsultaRepository;
+import com.example.consulta.repository.ExameRepository;
+import com.example.consulta.vo.ExameVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
-
-import com.example.consulta.model.Exame;
-import com.example.consulta.repository.ExameRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ExameService {
 
     @Autowired
     private ExameRepository exameRepository;
+    @Autowired
+    private ConsultaRepository consultaRepository; // Adicionado para buscar a consulta
 
-    @Cacheable(value = "exames") // Cacheia a lista completa de exames
-    public List<Exame> listarTodos() {
-        return exameRepository.findAll();
+    // Guarda a lista completa de exames no cache "exames".
+    @Cacheable("exames")
+    public List<ExameVO> listarTodos() {
+        return exameRepository.findAll().stream().map(this::toVO).collect(Collectors.toList());
     }
 
-    @Cacheable(value = "exame", key = "#id") // Cacheia um exame individual pelo ID
-    public Optional<Exame> buscarPorId(Long id) {
-        return exameRepository.findById(id);
+    // Guarda um exame individual no cache "exame", usando o ID como chave.
+    @Cacheable(value = "exame", key = "#id")
+    public Optional<ExameVO> buscarPorId(Long id) {
+        return exameRepository.findById(id).map(this::toVO);
     }
 
-    @CacheEvict(value = "exames", allEntries = true) // Limpa o cache "exames" na criação/atualização
-    @CachePut(value = "exame", key = "#exame.id") // Atualiza/adiciona o exame no cache "exame"
-    public Exame salvar(Exame exame) {
-        return exameRepository.save(exame);
+    // Agrupa operações de cache: limpa a lista e adiciona/atualiza o item salvo.
+    @Caching(evict = { @CacheEvict(value = "exames", allEntries = true) }, put = {
+            @CachePut(value = "exame", key = "#result.id()") })
+    public ExameVO salvar(ExameRequestDTO dto) {
+        Exame exame = toEntity(dto);
+        Exame exameSalvo = exameRepository.save(exame);
+        return toVO(exameSalvo);
     }
 
-    @CacheEvict(value = { "exames", "exame" }, allEntries = true) // Limpa caches relevantes na exclusão
+    // Agrupa operações de cache: limpa a lista e atualiza o item individual.
+    @Caching(evict = { @CacheEvict(value = "exames", allEntries = true) }, put = {
+            @CachePut(value = "exame", key = "#id") })
+    public Optional<ExameVO> atualizar(Long id, ExameRequestDTO dto) {
+        return exameRepository.findById(id)
+                .map(exameExistente -> {
+                    Consulta consulta = consultaRepository.findById(dto.consultaId())
+                            .orElseThrow(() -> new RuntimeException("Consulta não encontrada para o exame."));
+
+                    exameExistente.setNome(dto.nome());
+                    exameExistente.setResultado(dto.resultado());
+                    exameExistente.setObservacoes(dto.observacoes());
+                    exameExistente.setConsulta(consulta);
+
+                    Exame exameAtualizado = exameRepository.save(exameExistente);
+                    return toVO(exameAtualizado);
+                });
+    }
+
+    // Agrupa operações de cache: limpa a lista e o item individual.
+    @Caching(evict = {
+            @CacheEvict(value = "exames", allEntries = true),
+            @CacheEvict(value = "exame", key = "#id")
+    })
     public boolean deletar(Long id) {
         if (exameRepository.existsById(id)) {
             exameRepository.deleteById(id);
@@ -43,18 +78,28 @@ public class ExameService {
         return false;
     }
 
-    @CacheEvict(value = "exames", allEntries = true) // Limpa o cache de todos os exames
-    @CachePut(value = "exame", key = "#id") // Atualiza o cache de um exame específico
-    public Optional<Exame> atualizar(Long id, Exame dadosNovos) {
-        return exameRepository.findById(id)
-                .map(exameExistente -> {
-                    // Copia os campos do objeto de entrada para o objeto do banco
-                    exameExistente.setNome(dadosNovos.getNome());
-                    exameExistente.setResultado(dadosNovos.getResultado());
-                    exameExistente.setObservacoes(dadosNovos.getObservacoes());
-                    exameExistente.setConsulta(dadosNovos.getConsulta()); // Atualiza a referência à consulta
+    // --- MÉTODOS DE MAPEAMENTO ---
 
-                    return exameRepository.save(exameExistente);
-                });
+    private ExameVO toVO(Exame exame) {
+        Long consultaId = (exame.getConsulta() != null) ? exame.getConsulta().getId() : null;
+        return new ExameVO(
+                exame.getId(),
+                exame.getNome(),
+                exame.getResultado(),
+                exame.getObservacoes(),
+                consultaId);
+    }
+
+    private Exame toEntity(ExameRequestDTO dto) {
+        // Busca a entidade Consulta pelo ID fornecido no DTO.
+        Consulta consulta = consultaRepository.findById(dto.consultaId())
+                .orElseThrow(() -> new RuntimeException("Consulta com ID " + dto.consultaId() + " não encontrada."));
+
+        Exame exame = new Exame();
+        exame.setNome(dto.nome());
+        exame.setResultado(dto.resultado());
+        exame.setObservacoes(dto.observacoes());
+        exame.setConsulta(consulta);
+        return exame;
     }
 }
