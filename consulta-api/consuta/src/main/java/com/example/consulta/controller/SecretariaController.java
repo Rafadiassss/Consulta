@@ -1,6 +1,5 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.model.Exame;
 import com.example.consulta.model.Secretaria;
 import com.example.consulta.service.SecretariaService;
 
