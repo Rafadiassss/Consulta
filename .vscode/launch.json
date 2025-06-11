@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-ConsultaApplication<consulta>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.consulta.ConsultaApplication",
+            "projectName": "consulta",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
