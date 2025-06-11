@@ -1,42 +1,87 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.model.EntradaProntuario;
-import com.example.consulta.model.Prontuario;
+import com.example.consulta.dto.EntradaProntuarioRequestDTO;
+import com.example.consulta.dto.ProntuarioRequestDTO;
+import com.example.consulta.hateoas.ProntuarioModelAssembler;
 import com.example.consulta.service.ProntuarioService;
+import com.example.consulta.vo.ProntuarioVO;
+import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/prontuarios")
 public class ProntuarioController {
 
     private final ProntuarioService prontuarioService;
+    private final ProntuarioModelAssembler assembler;
 
-    public ProntuarioController(ProntuarioService prontuarioService) {
+    // Usando injeção via construtor, que é a melhor prática.
+    public ProntuarioController(ProntuarioService prontuarioService, ProntuarioModelAssembler assembler) {
         this.prontuarioService = prontuarioService;
+        this.assembler = assembler;
     }
 
-    @PostMapping("/salvar/{idUsuario}")
-    public ResponseEntity<String> salvar(
+    @PostMapping("/{idUsuario}")
+    public ResponseEntity<EntityModel<ProntuarioVO>> criarProntuario(
             @PathVariable Long idUsuario,
-            @RequestBody Prontuario prontuario) {
+            @RequestBody @Valid ProntuarioRequestDTO dto) throws IllegalArgumentException {
 
-        return prontuarioService.criarProntuario(idUsuario, prontuario);
+        try {
+            // Chama o serviço para criar o prontuário.
+            ProntuarioVO prontuarioVO = prontuarioService.criarProntuario(idUsuario, dto);
+            // Usa o assembler para converter o VO em um modelo HATEOAS.
+            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioVO);
+            // Retorna 201 Created com o modelo no corpo.
+            return ResponseEntity.status(HttpStatus.CREATED).body(prontuarioModel);
+
+        } catch (RuntimeException e) { // Captura o "Usuário não encontrado"
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    @GetMapping("/buscar/{idUsuario}/{idProntuario}")
-    public ResponseEntity<?> buscarProntuario(
+    @GetMapping("/{idUsuario}/{idProntuario}")
+    public ResponseEntity<EntityModel<ProntuarioVO>> buscarProntuario(
             @PathVariable Long idUsuario,
-            @PathVariable Long idProntuario) {
+            @PathVariable Long idProntuario) throws IllegalArgumentException {
+        try {
+            // Busca o VO do prontuário no serviço.
+            ProntuarioVO prontuarioVO = prontuarioService.buscarProntuario(idUsuario, idProntuario);
+            // Converte para o modelo HATEOAS.
+            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioVO);
 
-        return prontuarioService.buscarProntuario(idUsuario, idProntuario);
+            // Adiciona o link "self" dinâmico aqui no controller, onde temos todo o
+            // contexto.
+            prontuarioModel.add(
+                    linkTo(methodOn(ProntuarioController.class)
+                            .buscarProntuario(idUsuario, idProntuario)).withSelfRel());
+
+            // Retorna 200 OK com o modelo HATEOAS completo.
+            return ResponseEntity.ok(prontuarioModel);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PostMapping("/{idProntuario}/entradas")
-    public ResponseEntity<?> adicionarNovaEntrada(
+    public ResponseEntity<EntityModel<ProntuarioVO>> adicionarNovaEntrada(
             @PathVariable Long idProntuario,
-            @RequestBody EntradaProntuario novaEntrada) {
+            @RequestBody @Valid EntradaProntuarioRequestDTO dto) {
+        try {
+            // Adiciona a nova entrada e obtém o prontuário atualizado.
+            ProntuarioVO prontuarioAtualizadoVO = prontuarioService.adicionarEntrada(idProntuario, dto);
+            // Converte para o modelo HATEOAS.
+            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioAtualizadoVO);
+            // Retorna 200 OK com o prontuário completo.
+            return ResponseEntity.ok(prontuarioModel);
 
-        return prontuarioService.adicionarEntrada(idProntuario, novaEntrada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }
