@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+<<<<<<<HEAD
 // package com.example.consulta.service;
 
 // import com.example.consulta.model.Especialidade;
@@ -257,5 +257,4 @@ class EspecialidadeServiceTest {
         // Confirma que o 'save' nunca foi chamado.
         verify(especialidadeRepository, never()).save(any(Especialidade.class));
     }
-}
->>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
+}>>>>>>>996e84 ba9bfad1881755325609d529bacae7ce0f

@@ -1,7 +1,11 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.ExameRequestDTO;
+import com.example.consulta.model.Consulta;
 import com.example.consulta.model.Exame;
+import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.ExameRepository;
+import com.example.consulta.vo.ExameVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,10 +13,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -23,39 +31,98 @@ class ExameServiceTest {
 
     @Mock
     private ExameRepository exameRepository;
+    @Mock
+    private ConsultaRepository consultaRepository;
 
     @InjectMocks
     private ExameService exameService;
 
     private Exame exame;
+    private Consulta consulta;
+    private ExameRequestDTO exameRequestDTO;
 
     @BeforeEach
     void setUp() {
-        exame = new Exame("Hemograma Completo", "Resultados normais", "Sem observações", null);
-        // Supondo que Exame tenha um setId para testes
-        // exame.setId(1L);
+        // Prepara uma consulta de base.
+        consulta = new Consulta();
+        consulta.setId(10L);
+
+        // Prepara um exame de base, já associado à consulta.
+        exame = new Exame("Hemograma Completo", "Resultados normais", "Sem observações", consulta);
+        // Isso simula uma entidade que foi salva e recebeu um ID do banco.
+        ReflectionTestUtils.setField(exame, "id", 1L);
+
+        // Prepara um DTO para as requisições.
+        exameRequestDTO = new ExameRequestDTO("Raio-X", "Laudo pendente", "Paciente com tosse.", 10L);
     }
 
     @Test
-    @DisplayName("Deve buscar um exame por ID existente")
-    void buscarPorId_quandoEncontrado() {
-        when(exameRepository.findById(1L)).thenReturn(Optional.of(exame));
-        Optional<Exame> resultado = exameService.buscarPorId(1L);
-        assertThat(resultado).isPresent();
+    @DisplayName("Deve listar todos os exames e converter para VO")
+    void listarTodos() {
+        // Simula o repositório retornando uma lista com nosso exame.
+        when(exameRepository.findAll()).thenReturn(Collections.singletonList(exame));
+
+        // Chama o método do serviço.
+        List<ExameVO> resultado = exameService.listarTodos();
+
+        // Verifica se a lista foi retornada e convertida corretamente.
+        assertThat(resultado).isNotNull().hasSize(1);
+        assertThat(resultado.get(0).nome()).isEqualTo("Hemograma Completo");
     }
 
     @Test
-    @DisplayName("Deve salvar um exame")
+    @DisplayName("Deve salvar a partir de um DTO e retornar um VO")
     void salvar() {
+        // Simula o repositório encontrando a consulta associada.
+        when(consultaRepository.findById(10L)).thenReturn(Optional.of(consulta));
+        // Simula a ação de salvar, que retorna a entidade com ID.
         when(exameRepository.save(any(Exame.class))).thenReturn(exame);
-        Exame resultado = exameService.salvar(new Exame());
+
+        // Chama o método de serviço com o DTO.
+        ExameVO resultado = exameService.salvar(exameRequestDTO);
+
+        // Verifica se o VO retornado tem os dados esperados.
         assertThat(resultado).isNotNull();
+        assertThat(resultado.id()).isEqualTo(1L);
+        assertThat(resultado.nome()).isEqualTo("Hemograma Completo");
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao salvar se a consulta associada não existir")
+    void salvar_quandoConsultaNaoExiste() {
+        // Simula o repositório NÃO encontrando a consulta.
+        when(consultaRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // Verifica se a chamada ao serviço lança a exceção esperada.
+        assertThrows(RuntimeException.class, () -> {
+            exameService.salvar(exameRequestDTO);
+        });
+
+        // Garante que, com o erro, o exame nunca foi salvo.
+        verify(exameRepository, never()).save(any(Exame.class));
+    }
+
+    @Test
+    @DisplayName("Deve atualizar um exame existente com sucesso")
+    void atualizar_quandoEncontrado() {
+        // Simula a busca do exame e da consulta existentes.
+        when(exameRepository.findById(1L)).thenReturn(Optional.of(exame));
+        when(consultaRepository.findById(10L)).thenReturn(Optional.of(consulta));
+        // Simula a ação de salvar, retornando a entidade atualizada.
+        when(exameRepository.save(any(Exame.class))).thenReturn(exame);
+
+        // Chama o serviço de atualização.
+        Optional<ExameVO> resultado = exameService.atualizar(1L, exameRequestDTO);
+
+        // Verifica se o exame foi atualizado.
+        assertThat(resultado).isPresent();
+        assertThat(resultado.get().id()).isEqualTo(1L);
     }
 
     @Test
     @DisplayName("Deve deletar um exame existente e retornar true")
-    void deletar_quandoExameExiste() {
-        // Simula que o exame existe no banco.
+    void deletar_quandoEncontrado() {
+        // Simula que o exame existe.
         when(exameRepository.existsById(1L)).thenReturn(true);
         // Configura a chamada ao método 'deleteById'.
         doNothing().when(exameRepository).deleteById(1L);
@@ -63,41 +130,23 @@ class ExameServiceTest {
         // Chama o método de serviço.
         boolean resultado = exameService.deletar(1L);
 
-        // Verifica o retorno e a chamada ao repositório.
+        // Verifica o resultado e a chamada ao repositório.
         assertThat(resultado).isTrue();
         verify(exameRepository).deleteById(1L);
     }
 
     @Test
     @DisplayName("Deve retornar false ao tentar deletar um exame inexistente")
-    void deletar_quandoExameNaoExiste() {
+    void deletar_quandoNaoEncontrado() {
         // Simula que o exame NÃO existe.
         when(exameRepository.existsById(99L)).thenReturn(false);
 
         // Chama o método de serviço.
         boolean resultado = exameService.deletar(99L);
 
-        // Verifica o retorno 'false'.
+        // Verifica o resultado.
         assertThat(resultado).isFalse();
         // Confirma que 'deleteById' NUNCA foi chamado.
         verify(exameRepository, never()).deleteById(anyLong());
-    }
-
-    @Test
-    @DisplayName("Deve atualizar um exame com sucesso")
-    void atualizar_quandoEncontrado() {
-        Exame dadosNovos = new Exame("Hemograma", "Resultados alterados", "Repetir em 15 dias", null);
-
-        // Simula a busca da entidade existente.
-        when(exameRepository.findById(1L)).thenReturn(Optional.of(exame));
-        // Simula a ação de salvar.
-        when(exameRepository.save(any(Exame.class))).thenReturn(dadosNovos);
-
-        // Chama o serviço de atualização.
-        Optional<Exame> resultado = exameService.atualizar(1L, dadosNovos);
-
-        // Verifica se o exame foi atualizado.
-        assertThat(resultado).isPresent();
-        assertThat(resultado.get().getObservacoes()).isEqualTo("Repetir em 15 dias");
     }
 }

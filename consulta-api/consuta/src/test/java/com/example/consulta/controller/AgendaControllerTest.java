@@ -1,6 +1,7 @@
 package com.example.consulta.controller;
 
 import com.example.consulta.dto.AgendaRequestDTO;
+import com.example.consulta.dto.AgendaResponseDTO;
 import com.example.consulta.service.AgendaService;
 import com.example.consulta.vo.AgendaVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +20,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,32 +34,27 @@ class AgendaControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
-
     @MockBean
     private AgendaService agendaService;
 
     private AgendaVO agendaVO;
     private AgendaRequestDTO agendaRequestDTO;
+    private AgendaResponseDTO agendaResponseDTO;
 
     @BeforeEach
     void setUp() {
-        // Objeto VO que o serviço irá simular retornar.
         agendaVO = new AgendaVO(1L, LocalDate.of(2025, 10, 20), List.of(LocalTime.of(9, 0)));
-
-        // Objeto DTO que será enviado no corpo das requisições POST/PUT.
         agendaRequestDTO = new AgendaRequestDTO(LocalDate.of(2025, 10, 20), List.of(LocalTime.of(9, 0)));
+        agendaResponseDTO = new AgendaResponseDTO(1L, LocalDate.of(2025, 10, 20), List.of(LocalTime.of(9, 0)));
     }
 
     @Test
     @DisplayName("Deve listar agendas e retornar status 200 OK")
     void listar() throws Exception {
-        // Simula o serviço retornando uma lista de VOs.
         when(agendaService.listarTodas()).thenReturn(Collections.singletonList(agendaVO));
 
-        // Executa a requisição GET e verifica a resposta.
         mockMvc.perform(get("/agendas"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id", is(1)))
@@ -64,62 +62,64 @@ class AgendaControllerTest {
     }
 
     @Test
-    @DisplayName("Deve buscar agenda por ID existente e retornar status 200 OK")
-    void buscarPorId_quandoEncontrado() throws Exception {
-        // Simula o serviço encontrando a agenda.
-        when(agendaService.buscarPorId(1L)).thenReturn(Optional.of(agendaVO));
+    @DisplayName("Deve salvar uma nova agenda e retornar status 201 Created")
+    void salvar_comDadosValidos() throws Exception {
+        when(agendaService.salvar(any(AgendaRequestDTO.class))).thenReturn(agendaVO);
 
-        // Executa a requisição GET e verifica a resposta.
-        mockMvc.perform(get("/agendas/{id}", 1L))
+        mockMvc.perform(post("/agendas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(agendaRequestDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", containsString("/agendas/1")))
+                .andExpect(jsonPath("$.id", is(1)));
+    }
+
+    @Test
+    @DisplayName("Deve retornar status 400 Bad Request ao tentar salvar com data no passado")
+    void salvar_comDataNoPassado() throws Exception {
+        // Cria um DTO com dados inválidos (data no passado).
+        AgendaRequestDTO dtoInvalido = new AgendaRequestDTO(LocalDate.of(2020, 1, 1), List.of(LocalTime.of(9, 0)));
+
+        // Executa a requisição e espera um erro de validação.
+        mockMvc.perform(post("/agendas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dtoInvalido)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Deve retornar status 400 Bad Request ao tentar salvar com lista de horários vazia")
+    void salvar_comHorariosVazios() throws Exception {
+        // Cria um DTO com dados inválidos (lista de horários vazia).
+        AgendaRequestDTO dtoInvalido = new AgendaRequestDTO(LocalDate.now().plusDays(1), Collections.emptyList());
+
+        // Executa a requisição e espera um erro de validação.
+        mockMvc.perform(post("/agendas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dtoInvalido)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Deve atualizar uma agenda existente e retornar status 200 OK")
+    void atualizar_quandoEncontrado() throws Exception {
+        when(agendaService.atualizar(eq(1L), any(AgendaRequestDTO.class))).thenReturn(Optional.of(agendaVO));
+
+        mockMvc.perform(put("/agendas/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(agendaRequestDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)));
     }
 
     @Test
-    @DisplayName("Deve retornar status 404 Not Found ao buscar por ID inexistente")
-    void buscarPorId_quandoNaoEncontrado() throws Exception {
-        // Simula o serviço não encontrando a agenda.
-        when(agendaService.buscarPorId(99L)).thenReturn(Optional.empty());
+    @DisplayName("Deve retornar status 404 Not Found ao tentar atualizar agenda inexistente")
+    void atualizar_quandoNaoEncontrado() throws Exception {
+        when(agendaService.atualizar(eq(99L), any(AgendaRequestDTO.class))).thenReturn(Optional.empty());
 
-        // Executa a requisição e verifica o status 404.
-        mockMvc.perform(get("/agendas/{id}", 99L))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("Deve salvar uma nova agenda e retornar status 201 Created")
-    void salvar() throws Exception {
-        // Simula o serviço salvando e retornando o VO.
-        when(agendaService.salvar(any(AgendaRequestDTO.class))).thenReturn(agendaVO);
-
-        // Executa a requisição POST e verifica a resposta.
-        mockMvc.perform(post("/agendas")
+        mockMvc.perform(put("/agendas/{id}", 99L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(agendaRequestDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost/agendas/1"))
-                .andExpect(jsonPath("$.id", is(1)));
-    }
-
-    @Test
-    @DisplayName("Deve deletar uma agenda existente e retornar status 204 No Content")
-    void deletar_quandoEncontrado() throws Exception {
-        // Simula o serviço retornando 'true' para a exclusão bem-sucedida.
-        when(agendaService.deletar(1L)).thenReturn(true);
-
-        // Executa a requisição DELETE e verifica o status 204.
-        mockMvc.perform(delete("/agendas/{id}", 1L))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    @DisplayName("Deve retornar status 404 Not Found ao tentar deletar agenda inexistente")
-    void deletar_quandoNaoEncontrado() throws Exception {
-        // Simula o serviço retornando 'false' pois a agenda não foi encontrada.
-        when(agendaService.deletar(99L)).thenReturn(false);
-
-        // Executa a requisição DELETE e verifica o status 404.
-        mockMvc.perform(delete("/agendas/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 }

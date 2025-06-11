@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,15 +57,22 @@ public class ConsultaController {
     }
 
     @PostMapping
-    public ResponseEntity<EntityModel<ConsultaVO>> salvar(@RequestBody @Valid ConsultaRequestDTO dto) {
-        // Envia o DTO para o serviço e recebe o VO salvo.
-        ConsultaVO consultaSalvaVO = consultaService.salvar(dto);
-        // Converte o VO para um EntityModel.
-        EntityModel<ConsultaVO> consultaModel = assembler.toModel(consultaSalvaVO);
-        // Retorna 201 Created com a URI do novo recurso e o modelo no corpo.
-        return ResponseEntity
-                .created(consultaModel.getRequiredLink("self").toUri())
-                .body(consultaModel);
+    public ResponseEntity<?> salvar(@RequestBody @Valid ConsultaRequestDTO dto) {
+        try {
+            // Envia o DTO para o serviço e recebe o VO salvo.
+            ConsultaVO consultaSalvaVO = consultaService.salvar(dto);
+            // Converte o VO para um EntityModel.
+            EntityModel<ConsultaVO> consultaModel = assembler.toModel(consultaSalvaVO);
+            // Retorna 201 Created com a URI do novo recurso e o modelo no corpo.
+            return ResponseEntity
+                    .created(consultaModel.getRequiredLink("self").toUri())
+                    .body(consultaModel);
+        } catch (RuntimeException e) {
+            // Caminho de erro: traduz a exceção para uma resposta HTTP 404 Not Found.
+            // Isso funciona para "Paciente não encontrado", "Médico não encontrado"
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+
     }
 
     @PutMapping("/{id}")
@@ -77,9 +85,13 @@ public class ConsultaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Dentro de ConsultaController.java
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        consultaService.deletar(id);
-        return ResponseEntity.noContent().build();
+        if (consultaService.deletar(id)) {
+            return ResponseEntity.noContent().build(); // 204 No Content
+        } else {
+            return ResponseEntity.notFound().build(); // 404 Not Found
+        }
     }
 }

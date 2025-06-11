@@ -55,9 +55,14 @@ public class ConsultaService {
     }
 
     @CacheEvict(value = { "consultas", "consulta", "prontuario" }, allEntries = true)
+    // Dentro de ConsultaService.java
     @Transactional
-    public void deletar(Long id) {
-        consultaRepository.deleteById(id);
+    public boolean deletar(Long id) {
+        if (consultaRepository.existsById(id)) {
+            consultaRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 
     @CacheEvict(value = "consultas", allEntries = true) // Limpa o cache "consultas" na criação/atualização

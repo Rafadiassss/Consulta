@@ -38,13 +38,11 @@ class AgendaServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Objeto Entidade que o repositório irá simular retornar.
         agenda = new Agenda();
         agenda.setId(1L);
         agenda.setDataAgendada(LocalDate.of(2025, 10, 20));
         agenda.setHorarios(List.of(LocalTime.of(9, 0)));
 
-        // Objeto DTO que simularemos receber do controller.
         agendaRequestDTO = new AgendaRequestDTO(
                 LocalDate.of(2025, 10, 20),
                 List.of(LocalTime.of(9, 0), LocalTime.of(10, 0)));
@@ -53,57 +51,80 @@ class AgendaServiceTest {
     @Test
     @DisplayName("Deve listar todas as agendas e converter para VO")
     void listarTodas() {
-        // Simula o repositório retornando uma lista de entidades.
         when(agendaRepository.findAll()).thenReturn(Collections.singletonList(agenda));
 
-        // Chama o método do serviço.
         List<AgendaVO> resultado = agendaService.listarTodas();
 
-        // Verifica se a lista de VOs foi retornada corretamente.
         assertThat(resultado).isNotNull().hasSize(1);
         assertThat(resultado.get(0).id()).isEqualTo(1L);
+        verify(agendaRepository).findAll();
     }
 
     @Test
-    @DisplayName("Deve buscar por ID e retornar um Optional de VO")
+    @DisplayName("Deve buscar por ID existente e retornar um Optional de VO")
     void buscarPorId_quandoEncontrado() {
-        // Simula o repositório encontrando a entidade.
         when(agendaRepository.findById(1L)).thenReturn(Optional.of(agenda));
 
-        // Chama o método do serviço.
         Optional<AgendaVO> resultado = agendaService.buscarPorId(1L);
 
-        // Verifica se o VO correto foi retornado dentro do Optional.
         assertThat(resultado).isPresent();
         assertThat(resultado.get().dataAgendada()).isEqualTo(LocalDate.of(2025, 10, 20));
     }
 
     @Test
+    @DisplayName("Deve retornar Optional vazio ao buscar por ID inexistente")
+    void buscarPorId_quandoNaoEncontrado() {
+        when(agendaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        Optional<AgendaVO> resultado = agendaService.buscarPorId(99L);
+
+        assertThat(resultado).isEmpty();
+    }
+
+    @Test
     @DisplayName("Deve salvar a partir de um DTO e retornar um VO")
     void salvar() {
-        // Simula a ação de salvar do repositório, que retorna a entidade com ID.
         when(agendaRepository.save(any(Agenda.class))).thenReturn(agenda);
 
-        // Chama o método do serviço passando o DTO.
         AgendaVO resultado = agendaService.salvar(agendaRequestDTO);
 
-        // Verifica se o VO retornado contém os dados esperados.
         assertThat(resultado).isNotNull();
         assertThat(resultado.id()).isEqualTo(1L);
+        verify(agendaRepository).save(any(Agenda.class));
+    }
+
+    @Test
+    @DisplayName("Deve atualizar uma agenda existente com sucesso")
+    void atualizar_quandoEncontrado() {
+        when(agendaRepository.findById(1L)).thenReturn(Optional.of(agenda));
+        when(agendaRepository.save(any(Agenda.class))).thenReturn(agenda);
+
+        Optional<AgendaVO> resultado = agendaService.atualizar(1L, agendaRequestDTO);
+
+        assertThat(resultado).isPresent();
+        assertThat(resultado.get().id()).isEqualTo(1L);
+        verify(agendaRepository).save(any(Agenda.class));
+    }
+
+    @Test
+    @DisplayName("Deve retornar Optional vazio ao tentar atualizar agenda inexistente")
+    void atualizar_quandoNaoEncontrado() {
+        when(agendaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        Optional<AgendaVO> resultado = agendaService.atualizar(99L, agendaRequestDTO);
+
+        assertThat(resultado).isEmpty();
+        verify(agendaRepository, never()).save(any(Agenda.class));
     }
 
     @Test
     @DisplayName("Deve deletar uma agenda existente e retornar true")
     void deletar_quandoEncontrado() {
-        // Simula que a agenda existe.
         when(agendaRepository.existsById(1L)).thenReturn(true);
-        // Configura a chamada ao método 'deleteById'.
         doNothing().when(agendaRepository).deleteById(1L);
 
-        // Chama o método do serviço.
         boolean resultado = agendaService.deletar(1L);
 
-        // Verifica se o resultado é 'true' e se a exclusão foi chamada.
         assertThat(resultado).isTrue();
         verify(agendaRepository).deleteById(1L);
     }
@@ -111,15 +132,11 @@ class AgendaServiceTest {
     @Test
     @DisplayName("Deve retornar false ao tentar deletar agenda inexistente")
     void deletar_quandoNaoEncontrado() {
-        // Simula que a agenda NÃO existe.
         when(agendaRepository.existsById(99L)).thenReturn(false);
 
-        // Chama o método do serviço.
         boolean resultado = agendaService.deletar(99L);
 
-        // Verifica se o resultado é 'false'.
         assertThat(resultado).isFalse();
-        // Confirma que 'deleteById' NUNCA foi chamado.
         verify(agendaRepository, never()).deleteById(anyLong());
     }
 }

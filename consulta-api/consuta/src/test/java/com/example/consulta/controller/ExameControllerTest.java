@@ -1,8 +1,8 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.model.Consulta;
-import com.example.consulta.model.Exame;
+import com.example.consulta.dto.ExameRequestDTO;
 import com.example.consulta.service.ExameService;
+import com.example.consulta.vo.ExameVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,14 +16,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Collections;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ExameController.class)
-@DisplayName("Testes do Controller de Exames")
+@DisplayName("Testes do Controller de Exames (API)")
 class ExameControllerTest {
 
     @Autowired
@@ -32,112 +34,119 @@ class ExameControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    // Usando @MockBean para que o Spring substitua o serviço real por um mock.
     @MockBean
     private ExameService exameService;
 
-    private Exame exameSalvo;
+    private ExameVO exameVO;
+    private ExameRequestDTO exameRequestDTO;
 
     @BeforeEach
     void setUp() {
-        // Este objeto é criado antes de cada teste para representar
-        // um exame que já existe no banco de dados.
-        Consulta consulta = new Consulta();
-        exameSalvo = new Exame("Hemograma Completo", "Resultados normais", "Sem observações", consulta);
-        // O ID é definido aqui para simular a entidade retornada pelo banco.
-        // É necessário um método setId na entidade Exame para isso.
-        // exameSalvo.setId(1L);
+        // Objeto VO que o serviço (mock) irá simular retornar.
+        exameVO = new ExameVO(1L, "Hemograma Completo", "Resultados normais", "Coleta realizada sem problemas.", 10L);
+
+        // Objeto DTO que será enviado no corpo das requisições.
+        exameRequestDTO = new ExameRequestDTO("Hemograma Completo", "Resultados normais",
+                "Coleta realizada sem problemas.", 10L);
     }
 
     @Test
-    @DisplayName("Deve listar todos os exames")
-    void listarTodos() throws Exception {
-        // Arrange: Configura o mock do serviço para retornar uma lista com o exame de
-        // teste.
-        // Quando o método 'listarTodos' for chamado, ele retornará essa lista.
-        when(exameService.listarTodos()).thenReturn(Collections.singletonList(exameSalvo));
+    @DisplayName("Deve listar todos os exames e retornar status 200 OK")
+    void listar() throws Exception {
+        // Simula o serviço retornando uma lista de VOs.
+        when(exameService.listarTodos()).thenReturn(Collections.singletonList(exameVO));
 
-        // Act: Executa uma requisição GET para o endpoint /exames.
+        // Executa a requisição GET e verifica a resposta.
         mockMvc.perform(get("/exames"))
-                // Assert: Verifica se o status da resposta é 200 (OK).
                 .andExpect(status().isOk())
-                // Assert: Verifica se o nome do exame na resposta JSON está correto.
                 .andExpect(jsonPath("$[0].nome", is("Hemograma Completo")));
     }
 
     @Test
-    @DisplayName("Deve buscar um exame por ID existente")
+    @DisplayName("Deve buscar um exame por ID existente e retornar status 200 OK")
     void buscarPorId_quandoEncontrado() throws Exception {
-        // Arrange: Configura o mock para encontrar o exame quando 'buscarPorId' for
-        // chamado com o ID 1.
-        when(exameService.buscarPorId(1L)).thenReturn(Optional.of(exameSalvo));
+        // Simula o serviço encontrando o exame pelo ID.
+        when(exameService.buscarPorId(1L)).thenReturn(Optional.of(exameVO));
 
-        // Act: Executa a requisição GET para /exames/1.
+        // Executa a requisição GET e verifica a resposta.
         mockMvc.perform(get("/exames/{id}", 1L))
-                // Assert: Verifica se o status da resposta é 200 (OK).
                 .andExpect(status().isOk())
-                // Assert: Verifica os detalhes do exame na resposta JSON.
+                .andExpect(jsonPath("$.id", is(1)));
+    }
+
+    @Test
+    @DisplayName("Deve retornar status 404 Not Found ao buscar por ID inexistente")
+    void buscarPorId_quandoNaoEncontrado() throws Exception {
+        // Simula o serviço não encontrando o exame.
+        when(exameService.buscarPorId(99L)).thenReturn(Optional.empty());
+
+        // Executa a requisição GET e espera um 404.
+        mockMvc.perform(get("/exames/{id}", 99L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Deve salvar um novo exame e retornar status 201 Created")
+    void salvar() throws Exception {
+        // Simula o serviço salvando e retornando o VO.
+        when(exameService.salvar(any(ExameRequestDTO.class))).thenReturn(exameVO);
+
+        // Executa a requisição POST.
+        mockMvc.perform(post("/exames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(exameRequestDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", containsString("/exames/1")))
                 .andExpect(jsonPath("$.nome", is("Hemograma Completo")));
     }
 
     @Test
-    @DisplayName("Deve retornar vazio ao buscar por ID inexistente")
-    void buscarPorId_quandoNaoEncontrado() throws Exception {
-        // Arrange: Configura o mock para retornar um Optional vazio para qualquer ID.
-        when(exameService.buscarPorId(anyLong())).thenReturn(Optional.empty());
+    @DisplayName("Deve atualizar um exame existente e retornar status 200 OK")
+    void atualizar_quandoEncontrado() throws Exception {
+        // Simula o serviço de atualização retornando o VO atualizado.
+        when(exameService.atualizar(eq(1L), any(ExameRequestDTO.class))).thenReturn(Optional.of(exameVO));
 
-        // Act: Executa a requisição GET para um ID que não existe.
-        mockMvc.perform(get("/exames/{id}", 99L))
-                // Assert: Verifica se o status da resposta é 404 (NotFound) e o corpo está
-                // vazio.
-                .andExpect(status().isNotFound())
-                .andExpect(content().string(""));
-    }
-
-    @Test
-    @DisplayName("Deve salvar um novo exame")
-    void salvarExame() throws Exception {
-        // Arrange: Cria o objeto que será enviado no corpo da requisição, sem ID.
-        Exame exameParaEnviar = new Exame("Raio-X do Tórax", null, "Paciente tossindo.", new Consulta());
-
-        // Arrange: Cria o objeto que o serviço deve retornar, agora com o ID que seria
-        // gerado pelo banco.
-        Exame exameRetornadoPeloServico = new Exame(exameParaEnviar.getNome(), "Laudo pendente",
-                exameParaEnviar.getObservacoes(), exameParaEnviar.getConsulta());
-        // exameRetornadoPeloServico.setId(1L);
-
-        // Arrange: Configura o mock para que ao salvar qualquer exame, retorne o
-        // objeto com ID.
-        when(exameService.salvar(any(Exame.class))).thenReturn(exameRetornadoPeloServico);
-
-        // Act: Executa a requisição POST para /exames com o objeto sem ID no corpo.
-        mockMvc.perform(post("/exames")
+        // Executa a requisição PUT.
+        mockMvc.perform(put("/exames/{id}", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(exameParaEnviar)))
-                // Assert: Verifica se o status da resposta é 200 (OK).
-                .andExpect(status().isOk());
-        // Assert: Verifica se a resposta JSON contém o ID e o nome corretos.
-        // .andExpect(jsonPath("$.id", is(1)))
-        // .andExpect(jsonPath("$.nome", is("Raio-X do Tórax")));
-
-        // Verify: Garante que o método 'salvar' do serviço foi chamado exatamente uma
-        // vez.
-        verify(exameService, times(1)).salvar(any(Exame.class));
+                .content(objectMapper.writeValueAsString(exameRequestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(1)));
     }
 
     @Test
-    @DisplayName("Deve deletar um exame existente")
-    void deletarExame() throws Exception {
-        // Arrange: Configura o mock do serviço para o método 'deletar', que retorna um
-        // boolean.
+    @DisplayName("Deve retornar status 404 Not Found ao tentar atualizar exame inexistente")
+    void atualizar_quandoNaoEncontrado() throws Exception {
+        // Simula o serviço não encontrando o exame para atualizar.
+        when(exameService.atualizar(eq(99L), any(ExameRequestDTO.class))).thenReturn(Optional.empty());
+
+        // Executa a requisição PUT e espera um 404.
+        mockMvc.perform(put("/exames/{id}", 99L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(exameRequestDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Deve deletar um exame existente e retornar status 204 No Content")
+    void deletar_quandoEncontrado() throws Exception {
+        // Simula o serviço retornando 'true' para a exclusão bem-sucedida.
         when(exameService.deletar(1L)).thenReturn(true);
 
-        // Act: Executa a requisição DELETE para /exames/1.
+        // Executa a requisição DELETE e verifica o status 204.
         mockMvc.perform(delete("/exames/{id}", 1L))
-                // Assert: Verifica se o status da resposta é 200 (OK).
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
+    }
 
-        // Verify: Garante que o método 'deletar' do serviço foi chamado com o ID
-        // correto.
-        verify(exameService, times(1)).deletar(1L);
+    @Test
+    @DisplayName("Deve retornar status 404 Not Found ao tentar deletar exame inexistente")
+    void deletar_quandoNaoEncontrado() throws Exception {
+        // Simula o serviço retornando 'false' pois o exame não foi encontrado.
+        when(exameService.deletar(99L)).thenReturn(false);
+
+        // Executa a requisição DELETE e verifica o status 404.
+        mockMvc.perform(delete("/exames/{id}", 99L))
+                .andExpect(status().isNotFound());
     }
 }
