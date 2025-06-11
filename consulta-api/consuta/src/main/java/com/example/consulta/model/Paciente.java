@@ -13,13 +13,15 @@ public class Paciente extends Usuario {
 
     @OneToMany(mappedBy = "paciente")
     private List<Consulta> consultas;
+    @Column(name = "cartao_sus")
+    private String cartaoSus;
 
     // Construtores
     public Paciente() {
     }
 
-    public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha) {
-
+    public Paciente(String nome, String cpf, LocalDate dataNascimento, String usuario, String senha, String cartaoSus) {
+        this.cartaoSus = cartaoSus;
         this.cpf = cpf;
     }
 
@@ -45,4 +47,13 @@ public class Paciente extends Usuario {
     public List<Consulta> listarConsultas() {
         return consultas;
     }
+
+    public String getCartaoSus() {
+        return cartaoSus;
+    }
+
+    public void setCartaoSus(String cartaoSus) {
+        this.cartaoSus = cartaoSus;
+    }
+
 }

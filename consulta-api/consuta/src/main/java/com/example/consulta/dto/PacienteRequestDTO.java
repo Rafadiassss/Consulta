@@ -11,17 +11,18 @@ import java.time.LocalDate;
  * DTO para receber os dados de criação/atualização de um Paciente.
  */
 public record PacienteRequestDTO(
-        @NotBlank(message = "O nome não pode ser vazio") String nome,
+                @NotBlank(message = "O nome não pode ser vazio") String nome,
 
-        @NotBlank(message = "O nome de usuário não pode ser vazio") String username,
+                @NotBlank(message = "O nome de usuário não pode ser vazio") String username,
 
-        @NotBlank(message = "A senha não pode ser vazia") String senha,
+                @NotBlank(message = "A senha não pode ser vazia") String senha,
 
-        @Email(message = "O e-mail deve ser válido") String email,
+                @Email(message = "O e-mail deve ser válido") String email,
 
-        String telefone,
+                String telefone,
 
-        @Past(message = "A data de nascimento deve ser no passado") LocalDate dataNascimento,
+                @Past(message = "A data de nascimento deve ser no passado") LocalDate dataNascimento,
 
-        @NotBlank(message = "O CPF não pode ser vazio") @CPF(message = "O CPF fornecido é inválido") String cpf) {
+                @NotBlank(message = "O CPF não pode ser vazio") @CPF(message = "O CPF fornecido é inválido") String cpf,
+                String cartaoSus) {
 }

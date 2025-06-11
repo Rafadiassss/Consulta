@@ -80,7 +80,8 @@ public class PacienteService {
                 paciente.getEmail(),
                 paciente.getTelefone(),
                 paciente.getDataNascimento(),
-                paciente.getCpf());
+                paciente.getCpf(),
+                paciente.getCartaoSus());
     }
 
     private Paciente toEntity(PacienteRequestDTO dto) {
@@ -92,6 +93,7 @@ public class PacienteService {
         paciente.setTelefone(dto.telefone());
         paciente.setDataNascimento(dto.dataNascimento());
         paciente.setCpf(dto.cpf());
+        paciente.setCartaoSus(dto.cartaoSus());
         paciente.setTipo("PACIENTE");
         return paciente;
     }

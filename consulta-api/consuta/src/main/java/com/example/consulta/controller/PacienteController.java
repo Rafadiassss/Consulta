@@ -23,9 +23,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @Tag(name = "Paciente", description = "Operações para gerenciar pacientes")
 public class PacienteController {
 
+    // Injeta o serviço de paciente.
     @Autowired
     private PacienteService pacienteService;
 
+    // Injeta o assembler para construir as respostas HATEOAS.
     @Autowired
     private PacienteModelAssembler assembler;
 
@@ -35,7 +37,7 @@ public class PacienteController {
         List<PacienteVO> pacientesVO = pacienteService.listarTodos();
         // Converte cada VO em um EntityModel com links HATEOAS.
         List<EntityModel<PacienteVO>> pacientesModel = pacientesVO.stream()
-                .map(assembler::toModel)
+                .map(vo -> assembler.toModel(vo))
                 .collect(Collectors.toList());
         // Cria o modelo de coleção com um link para a própria lista.
         CollectionModel<EntityModel<PacienteVO>> collectionModel = CollectionModel.of(pacientesModel,
@@ -49,7 +51,7 @@ public class PacienteController {
         // Busca o VO do serviço.
         return pacienteService.buscarPorId(id)
                 // Se encontrado, converte para EntityModel.
-                .map(assembler::toModel)
+                .map(vo -> assembler.toModel(vo))
                 // Envolve em uma resposta 200 OK.
                 .map(ResponseEntity::ok)
                 // Se não encontrado, retorna 404 Not Found.
@@ -74,7 +76,7 @@ public class PacienteController {
         // Chama o serviço de atualização.
         return pacienteService.atualizar(id, dto)
                 // Se bem-sucedido, converte o VO para EntityModel.
-                .map(assembler::toModel)
+                .map(vo -> assembler.toModel(vo))
                 // Envolve em uma resposta 200 OK.
                 .map(ResponseEntity::ok)
                 // Se não encontrado, retorna 404 Not Found.

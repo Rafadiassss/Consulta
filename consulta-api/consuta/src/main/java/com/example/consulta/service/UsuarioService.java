@@ -2,9 +2,11 @@ package com.example.consulta.service;
 
 import com.example.consulta.dto.MedicoRequestDTO;
 import com.example.consulta.dto.PacienteRequestDTO;
+import com.example.consulta.model.Especialidade;
 import com.example.consulta.model.Medico;
 import com.example.consulta.model.Paciente;
 import com.example.consulta.model.Usuario;
+import com.example.consulta.repository.EspecialidadeRepository;
 import com.example.consulta.repository.UsuarioRepository;
 import com.example.consulta.vo.UsuarioVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EspecialidadeRepository especialidadeRepository;
 
     @Cacheable("usuarios")
     public List<UsuarioVO> listarTodos() {
@@ -73,7 +78,7 @@ public class UsuarioService {
         if (usuario instanceof Medico) {
             Medico medico = (Medico) usuario;
             crm = medico.getCrm();
-            especialidade = medico.getEspecialidade();
+            especialidade = medico.getEspecialidade().getNome();
         } else if (usuario instanceof Paciente) {
             Paciente paciente = (Paciente) usuario;
             cpf = paciente.getCpf();
@@ -86,14 +91,19 @@ public class UsuarioService {
     }
 
     private Medico toMedicoEntity(MedicoRequestDTO dto) {
+        // Lança uma exceção se a especialidade com o ID fornecido não for encontrada.
+        Especialidade especialidade = especialidadeRepository.findById(dto.especialidadeId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Especialidade com ID " + dto.especialidadeId() + " não encontrada."));
+
         Medico medico = new Medico();
         medico.setNome(dto.nome());
         medico.setUsername(dto.username());
-        medico.setSenha(dto.senha()); // Lembre-se de codificar a senha!
+        medico.setSenha(dto.senha());
         medico.setEmail(dto.email());
         medico.setTelefone(dto.telefone());
         medico.setCrm(dto.crm());
-        medico.setEspecialidade(dto.especialidade());
+        medico.setEspecialidade(especialidade);
         medico.setTipo("MEDICO");
         return medico;
     }
