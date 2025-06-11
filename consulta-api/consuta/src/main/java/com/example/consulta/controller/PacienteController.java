@@ -85,12 +85,13 @@ public class PacienteController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        // Chama o serviço para deletar.
+        // Chama o serviço para deletar, que retorna 'true' se a exclusão foi
+        // bem-sucedida.
         if (pacienteService.deletar(id)) {
-            // Se o serviço retornar true, envia 204 No Content.
+            // Retorna 204 No Content para indicar sucesso na exclusão.
             return ResponseEntity.noContent().build();
         } else {
-            // Se retornar false, envia 404 Not Found.
+            // Retorna 404 Not Found se o recurso não foi encontrado para deletar.
             return ResponseEntity.notFound().build();
         }
     }

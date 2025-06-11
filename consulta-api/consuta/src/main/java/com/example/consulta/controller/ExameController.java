@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/exames")
 @Tag(name = "Exame", description = "Operações para gerenciar exames")
+@Tag(name = "Exame", description = "Operações para gerenciar exames")
 public class ExameController {
 
     @Autowired

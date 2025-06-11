@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* package com.example.consulta.controller;
+=======
+package com.example.consulta.controller;
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
 
 import com.example.consulta.model.Especialidade;
 import com.example.consulta.service.EspecialidadeService;
@@ -117,4 +121,8 @@ class EspecialidadeControllerTest {
 
         verify(especialidadeService, times(1)).deletar(1L);
     }
+<<<<<<< HEAD
 } */
+=======
+}
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f

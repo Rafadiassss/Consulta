@@ -5,23 +5,30 @@ import com.example.consulta.model.Paciente;
 import com.example.consulta.model.Usuario;
 import com.example.consulta.service.UsuarioService;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+import com.fasterxml.jackson.databind.ObjectMapper;
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+
+import java.util.Collections;
+import java.util.Optional;
+
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-
 @WebMvcTest(UsuarioController.class)
+<<<<<<< HEAD
 =======
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,17 +52,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UsuarioController.class)
 @DisplayName("Testes do Controller de Usuários")
 >>>>>>> 1b19c972bcbcc15b70fc0e087c0d6b07c2c37776
+=======
+@DisplayName("Testes do Controller de Usuários")
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
 class UsuarioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     @Autowired
     private ObjectMapper objectMapper;
 
 >>>>>>> 1b19c972bcbcc15b70fc0e087c0d6b07c2c37776
+=======
+    @Autowired
+    private ObjectMapper objectMapper;
+
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
     @MockBean
     private UsuarioService usuarioService;
 
@@ -65,121 +81,117 @@ class UsuarioControllerTest {
 
     @BeforeEach
 <<<<<<< HEAD
+<<<<<<< HEAD
     void setup(WebApplicationContext context) {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
 
         // Criação de objetos para os testes
+=======
+    void setUp() {
+        // Objeto base para um usuário genérico.
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
         usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setNome("João");
-        usuario.setUsername("joao123");
-        usuario.setSenha("senha123");
-        usuario.setTipo("medico");
+        usuario.setNome("Usuário Padrão");
+        usuario.setUsername("user.default");
+        usuario.setTipo("USUARIO");
 
+        // Objeto para um médico, usando a classe real do seu projeto.
         medico = new Medico();
         medico.setId(2L);
-        medico.setNome("Dr. Marcos");
-        medico.setUsername("drmarcos");
-        medico.setSenha("senhaMedico");
-        medico.setTipo("medico");
+        medico.setNome("Dra. Ana");
+        medico.setUsername("ana.med");
+        medico.setTipo("MEDICO");
+        medico.setCrm("12345-SP"); // Supondo que Medico tenha o campo 'crm'
 
+        // Objeto para um paciente, usando a classe real do seu projeto.
         paciente = new Paciente();
         paciente.setId(3L);
-        paciente.setNome("Maria");
-        paciente.setUsername("maria123");
-        paciente.setSenha("senhaPaciente");
-        paciente.setTipo("paciente");
+        paciente.setNome("Carlos Souza");
+        paciente.setUsername("carlos.souza");
+        paciente.setTipo("PACIENTE");
+        paciente.setCpf("111.222.333-44"); // Supondo que Paciente tenha o campo 'cpf'
     }
 
     @Test
-    void deveCriarUsuario() throws Exception {
-        String json = """
-            {
-                "nome": "João",
-                "username": "joao123",
-                "senha": "senha123",
-                "tipo": "medico",
-                "telefone": "123456789",
-                "email": "joao@email.com",
-                "dataNascimento": "1990-01-01"
-            }
-            """;
+    @DisplayName("Deve listar todos os usuários")
+    void listarTodos() throws Exception {
+        // Configura o mock do serviço para retornar uma lista de usuários.
+        when(usuarioService.listarTodos()).thenReturn(Collections.singletonList(usuario));
 
-        Mockito.when(usuarioService.salvar(any(Usuario.class))).thenReturn(usuario);
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/usuarios")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+        // Executa a requisição GET e verifica a resposta.
+        mockMvc.perform(get("/usuarios"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("João"))
-                .andExpect(jsonPath("$.username").value("joao123"));
+                .andExpect(jsonPath("$[0].nome", is("Usuário Padrão")));
     }
 
     @Test
-    void deveCriarMedico() throws Exception {
-        String json = """
-            {
-                "nome": "Dr. Marcos",
-                "username": "drmarcos",
-                "senha": "senhaMedico",
-                "tipo": "medico",
-                "telefone": "987654321",
-                "email": "drmarcos@email.com",
-                "dataNascimento": "1985-05-10"
-            }
-            """;
+    @DisplayName("Deve buscar um usuário por ID existente")
+    void buscarPorId_quandoEncontrado() throws Exception {
+        // Configura o mock para encontrar o usuário com ID 1.
+        when(usuarioService.buscarPorId(1L)).thenReturn(Optional.of(usuario));
 
-        Mockito.when(usuarioService.salvarMedico(any(Medico.class))).thenReturn(medico);
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/usuarios/medico")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+        // Executa a requisição GET e verifica os dados retornados.
+        mockMvc.perform(get("/usuarios/{id}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Dr. Marcos"))
-                .andExpect(jsonPath("$.username").value("drmarcos"));
+                .andExpect(jsonPath("$.nome", is("Usuário Padrão")));
     }
 
     @Test
-    void deveCriarPaciente() throws Exception {
-        String json = """
-            {
-                "nome": "Maria",
-                "username": "maria123",
-                "senha": "senhaPaciente",
-                "tipo": "paciente",
-                "telefone": "321654987",
-                "email": "maria@email.com",
-                "dataNascimento": "1992-07-20"
-            }
-            """;
+    @DisplayName("Deve retornar corpo vazio ao buscar por ID inexistente")
+    void buscarPorId_quandoNaoEncontrado() throws Exception {
+        // Configura o mock para não encontrar o usuário com ID 99.
+        when(usuarioService.buscarPorId(99L)).thenReturn(Optional.empty());
 
-        Mockito.when(usuarioService.salvarPaciente(any(Paciente.class))).thenReturn(paciente);
+        // Executa a requisição GET para um ID que não existe.
+        mockMvc.perform(get("/usuarios/{id}", 99L))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(""));
+    }
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/usuarios/paciente")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+    @Test
+    @DisplayName("Deve salvar um novo médico")
+    void salvarMedico() throws Exception {
+        // Configura o mock para retornar o médico salvo.
+        when(usuarioService.salvarMedico(any(Medico.class))).thenReturn(medico);
+
+        // Executa a requisição POST para /usuarios/medico.
+        mockMvc.perform(post("/usuarios/medico")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(medico)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Maria"))
-                .andExpect(jsonPath("$.username").value("maria123"));
+                .andExpect(jsonPath("$.nome", is("Dra. Ana")));
     }
 
     @Test
-    void deveBuscarUsuarioPorId() throws Exception {
-        Mockito.when(usuarioService.buscarPorId(1L)).thenReturn(java.util.Optional.of(usuario));
+    @DisplayName("Deve salvar um novo paciente")
+    void salvarPaciente() throws Exception {
+        // Configura o mock para retornar o paciente salvo.
+        when(usuarioService.salvarPaciente(any(Paciente.class))).thenReturn(paciente);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/usuarios/1"))
+        // Executa a requisição POST para /usuarios/paciente.
+        mockMvc.perform(post("/usuarios/paciente")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(paciente)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("João"))
-                .andExpect(jsonPath("$.username").value("joao123"));
+                .andExpect(jsonPath("$.nome", is("Carlos Souza")));
     }
 
     @Test
-    void deveDeletarUsuario() throws Exception {
-        Mockito.doNothing().when(usuarioService).deletar(1L);
+    @DisplayName("Deve atualizar um usuário existente")
+    void atualizarUsuario() throws Exception {
+        // Configura o mock do serviço para o método 'salvar' que é chamado pelo
+        // 'atualizar' do controller.
+        when(usuarioService.salvar(any(Usuario.class))).thenReturn(usuario);
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/usuarios/1"))
-                .andExpect(status().isOk());
+        // Executa a requisição PUT.
+        mockMvc.perform(put("/usuarios/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(usuario)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome", is("Usuário Padrão")));
     }
+<<<<<<< HEAD
 }
 =======
     void setUp() {
@@ -285,6 +297,8 @@ class UsuarioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome", is("Usuário Padrão")));
     }
+=======
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f
 
     @Test
     @DisplayName("Deve deletar um usuário existente e retornar status 204 No Content")
@@ -315,5 +329,9 @@ class UsuarioControllerTest {
         // Garante que o método 'deletar' NUNCA foi chamado.
         verify(usuarioService, never()).deletar(anyLong());
     }
+<<<<<<< HEAD
 }
 >>>>>>> 1b19c972bcbcc15b70fc0e087c0d6b07c2c37776
+=======
+}
+>>>>>>> 996e84ba9bfad1881755325609d529bacae7ce0f

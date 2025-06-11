@@ -1,5 +1,7 @@
 package com.example.consulta.controller;
 
+import com.example.consulta.model.Agenda;
+
 import com.example.consulta.dto.AgendaRequestDTO;
 import com.example.consulta.dto.AgendaResponseDTO;
 import com.example.consulta.service.AgendaService;
@@ -7,6 +9,7 @@ import com.example.consulta.vo.AgendaVO;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;

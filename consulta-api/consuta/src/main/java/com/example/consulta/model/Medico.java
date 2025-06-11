@@ -7,6 +7,7 @@ import jakarta.persistence.ManyToOne;
 
 @Entity
 @DiscriminatorValue("MEDICO")
+
 public class Medico extends Usuario {
 
     private String crm;
