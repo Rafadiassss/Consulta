@@ -1,25 +1,30 @@
 package com.example.consulta.hateoas;
 
 import com.example.consulta.controller.PacienteController;
-import com.example.consulta.model.Paciente;
+import com.example.consulta.vo.PacienteVO;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.stereotype.Component;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @Component
-public class PacienteModelAssembler {
+public class PacienteModelAssembler implements RepresentationModelAssembler<PacienteVO, EntityModel<PacienteVO>> {
 
-    public EntityModel<Paciente> toModel(Paciente paciente) {
-        EntityModel<Paciente> pacienteModel = EntityModel.of(paciente);
-        Link selfLink = linkTo(methodOn(PacienteController.class).buscarPorId(paciente.getId())).withSelfRel();
-        Link allLink = linkTo(methodOn(PacienteController.class).listar()).withRel("all");
-        Link createLink = linkTo(methodOn(PacienteController.class).salvar(null)).withRel("create");
-        Link updateLink = linkTo(methodOn(PacienteController.class).atualizar(paciente.getId(), null)).withRel("update");
-        Link deleteLink = linkTo(methodOn(PacienteController.class).deletar(paciente.getId())).withRel("delete");
-        
-        pacienteModel.add(selfLink, allLink, createLink, updateLink, deleteLink);
+    @Override
+    public EntityModel<PacienteVO> toModel(PacienteVO pacienteVO) {
+        // Cria um EntityModel envolvendo o VO do paciente.
+        EntityModel<PacienteVO> pacienteModel = EntityModel.of(pacienteVO,
+                // Adiciona um link para o próprio recurso.
+                linkTo(methodOn(PacienteController.class).buscarPorId(pacienteVO.id())).withSelfRel(),
+                // Adiciona um link para a coleção de todos os pacientes.
+                linkTo(methodOn(PacienteController.class).listar()).withRel("pacientes"));
+
+        // Adiciona links para outras ações possíveis.
+        pacienteModel
+                .add(linkTo(methodOn(PacienteController.class).atualizar(pacienteVO.id(), null)).withRel("update"));
+        pacienteModel.add(linkTo(methodOn(PacienteController.class).deletar(pacienteVO.id())).withRel("delete"));
+
         return pacienteModel;
     }
 }

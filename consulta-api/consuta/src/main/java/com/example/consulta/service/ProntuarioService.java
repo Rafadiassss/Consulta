@@ -1,79 +1,104 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.EntradaProntuarioRequestDTO;
+import com.example.consulta.dto.ProntuarioRequestDTO;
+import com.example.consulta.enums.TipoUsuario;
+import com.example.consulta.model.EntradaProntuario;
 import com.example.consulta.model.Prontuario;
 import com.example.consulta.model.Usuario;
 import com.example.consulta.repository.ProntuarioRepository;
 import com.example.consulta.repository.UsuarioRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.example.consulta.vo.EntradaProntuarioVO;
+import com.example.consulta.vo.ProntuarioVO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
-@Service 
+@Service
 public class ProntuarioService {
 
-    private final ProntuarioRepository prontuarioRepository;
-    private final UsuarioRepository usuarioRepository;
+    @Autowired
+    private ProntuarioRepository prontuarioRepository;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
-    public ProntuarioService(ProntuarioRepository prontuarioRepository, UsuarioRepository usuarioRepository) {
-        this.prontuarioRepository = prontuarioRepository;
-        this.usuarioRepository = usuarioRepository;
+    public ProntuarioVO criarProntuario(Long idUsuario, ProntuarioRequestDTO dto) {
+        // Busca o usuário. Se não encontrar, lança uma exceção padrão.
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuário (médico) não encontrado."));
+
+        // Valida a permissão. Se não for médico, lança IllegalArgumentException.
+        if (usuario.getTipo() != TipoUsuario.medico) {
+            throw new IllegalArgumentException("Apenas médicos podem criar prontuários.");
+        }
+
+        Prontuario prontuario = new Prontuario();
+        prontuario.setNumero(dto.numero());
+        Prontuario prontuarioSalvo = prontuarioRepository.save(prontuario);
+
+        return toVO(prontuarioSalvo);
     }
 
-    public ResponseEntity<String> criarProntuario(Long idUsuario, Prontuario prontuario) {
-        System.out.println("Entrou no método criarProntuario");
-        System.out.println("ID do Usuário: " + idUsuario);
-        System.out.println("Prontuário recebido: " + prontuario);
-
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
-
-        if (usuarioOpt.isEmpty()) {
-            System.out.println("Usuário não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário (médico) não encontrado.");
+    public ProntuarioVO buscarProntuario(Long idUsuario, Long idProntuario) {
+        // Valida o usuário.
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+        if (usuario.getTipo() != TipoUsuario.medico) {
+            throw new IllegalArgumentException("Apenas médicos podem visualizar prontuários.");
         }
 
-        Usuario usuario = usuarioOpt.get();
+        // Busca o prontuário.
+        Prontuario prontuario = prontuarioRepository.findById(idProntuario)
+                .orElseThrow(() -> new RuntimeException("Prontuário não encontrado."));
 
-        if (!"MÉDICO".equals(usuario.getTipo())) {
-            System.out.println("Usuário não é médico.");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas médicos podem criar prontuários.");
-        }
-
-        prontuarioRepository.save(prontuario);
-        System.out.println("Prontuário salvo com ID: " + prontuario.getId());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body("Prontuário criado com sucesso.");
+        return toVO(prontuario);
     }
 
-    public Usuario getUsuarioById(long id) {
-        return usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    public ProntuarioVO adicionarEntrada(Long idProntuario, EntradaProntuarioRequestDTO dto) {
+        Prontuario prontuario = prontuarioRepository.findById(idProntuario)
+                .orElseThrow(() -> new RuntimeException("Prontuário principal não encontrado."));
+
+        EntradaProntuario novaEntrada = toEntradaEntity(dto);
+        novaEntrada.setDataEntrada(LocalDateTime.now());
+
+        prontuario.adicionarEntrada(novaEntrada);
+
+        Prontuario prontuarioAtualizado = prontuarioRepository.save(prontuario);
+
+        return toVO(prontuarioAtualizado);
     }
 
-    public ResponseEntity<?> buscarProntuario(Long idUsuario, Long idProntuario) {
-        System.out.println("Entrou no método buscarProntuario");
-        System.out.println("ID do Usuário: " + idUsuario);
-        System.out.println("ID do Prontuário: " + idProntuario);
+    // --- MÉTODOS DE MAPEAMENTO ---
 
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
-        if (usuarioOpt.isEmpty()) {
-            System.out.println("Usuário não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
-        }
+    private ProntuarioVO toVO(Prontuario prontuario) {
+        List<EntradaProntuarioVO> entradasVO = prontuario.getEntradas().stream()
+                .map(this::toEntradaVO).collect(Collectors.toList());
+        return new ProntuarioVO(prontuario.getId(), prontuario.getNumero(), entradasVO);
+    }
 
-        Usuario usuario = usuarioOpt.get();
-        if (!"MÉDICO".equals(usuario.getTipo())) {
-            System.out.println("Usuário não é médico.");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas médicos podem visualizar prontuários.");
-        }
+    private EntradaProntuarioVO toEntradaVO(EntradaProntuario entrada) {
+        return new EntradaProntuarioVO(entrada.getId(), entrada.getDataEntrada(), entrada.getDiagnostico(),
+                entrada.getTratamento(), entrada.getObservacoes());
+    }
 
-        Optional<Prontuario> prontuarioOpt = prontuarioRepository.findById(idProntuario);
-        if (prontuarioOpt.isEmpty()) {
-            System.out.println("Prontuário não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Prontuário não encontrado.");
-        }
+    private EntradaProntuario toEntradaEntity(EntradaProntuarioRequestDTO dto) {
+        EntradaProntuario entrada = new EntradaProntuario();
+        entrada.setDiagnostico(dto.diagnostico());
+        entrada.setTratamento(dto.tratamento());
+        entrada.setObservacoes(dto.observacoes());
+        return entrada;
+    }
 
-        System.out.println("Prontuário encontrado: " + prontuarioOpt.get());
-        return ResponseEntity.ok(prontuarioOpt.get());
+    @Cacheable("prontuarios") // Ainda é uma boa ideia manter o cache aqui
+    public List<ProntuarioVO> listarTodosSemValidacao() {
+        System.out.println("Buscando TODOS os prontuários no banco (requisição de desenvolvimento)...");
+        return prontuarioRepository.findAll()
+                .stream()
+                .map(this::toVO)
+                .collect(Collectors.toList());
     }
 }

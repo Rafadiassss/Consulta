@@ -22,7 +22,8 @@ public class Secretaria {
     private List<Consulta> consultasGerenciadas;
 
     // Construtores
-    public Secretaria() {}
+    public Secretaria() {
+    }
 
     public Secretaria(String nome, String usuario, String senha) {
         this.nome = nome;
@@ -58,7 +59,6 @@ public class Secretaria {
     public void setSenha(String senha) {
         this.senha = senha;
     }
-    
 
     public void setId(Long id) {
         this.id = id;

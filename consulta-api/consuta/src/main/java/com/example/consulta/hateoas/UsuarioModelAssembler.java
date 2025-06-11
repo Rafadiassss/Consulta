@@ -1,27 +1,24 @@
 package com.example.consulta.hateoas;
 
 import com.example.consulta.controller.UsuarioController;
-import com.example.consulta.model.Usuario;
-
+import com.example.consulta.vo.UsuarioVO;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.stereotype.Component;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @Component
-public class UsuarioModelAssembler {
+public class UsuarioModelAssembler implements RepresentationModelAssembler<UsuarioVO, EntityModel<UsuarioVO>> {
 
-    public EntityModel<Usuario> toModel(Usuario usuario) {
-        EntityModel<Usuario> usuarioModel = EntityModel.of(usuario);
+    @Override
+    public EntityModel<UsuarioVO> toModel(UsuarioVO usuarioVO) {
+        // Cria o EntityModel a partir do VO genérico.
+        EntityModel<UsuarioVO> usuarioModel = EntityModel.of(usuarioVO,
+                linkTo(methodOn(UsuarioController.class).buscarPorId(usuarioVO.id())).withSelfRel(),
+                linkTo(methodOn(UsuarioController.class).listarTodos()).withRel("usuarios"));
 
-        Link selfLink = linkTo(methodOn(UsuarioController.class).buscarPorId(usuario.getId())).withSelfRel();
-        Link allLink = linkTo(methodOn(UsuarioController.class).listarTodos()).withRel("all");
-        Link createLink = linkTo(methodOn(UsuarioController.class).salvar(null)).withRel("create");
-        Link updateLink = linkTo(methodOn(UsuarioController.class).atualizar(usuario.getId(), null)).withRel("update");
-        Link deleteLink = linkTo(methodOn(UsuarioController.class).deletar(usuario.getId())).withRel("delete");
-
-        usuarioModel.add(selfLink, allLink, createLink, updateLink, deleteLink);
+        usuarioModel.add(linkTo(methodOn(UsuarioController.class).deletar(usuarioVO.id())).withRel("delete"));
 
         return usuarioModel;
     }

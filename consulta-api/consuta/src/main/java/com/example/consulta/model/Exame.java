@@ -14,12 +14,12 @@ public class Exame {
     private String observacoes;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    
     @JoinColumn(name = "consulta_id")
     private Consulta consulta;
 
     // Construtores
-    public Exame() {}
+    public Exame() {
+    }
 
     public Exame(String nome, String resultado, String observacoes, Consulta consulta) {
         this.nome = nome;

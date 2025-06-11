@@ -1,9 +1,14 @@
 package com.example.consulta.model;
 
+import com.example.consulta.enums.TipoUsuario;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
@@ -21,7 +26,8 @@ public class Usuario {
     @JsonIgnore
     private String senha;
 
-    private String tipo;
+    @Enumerated(EnumType.STRING)
+    private TipoUsuario tipo;
     private String telefone;
     private String email;
     private LocalDate dataNascimento;
@@ -74,11 +80,11 @@ public class Usuario {
         this.email = email;
     }
 
-        public String getTipo() {
+    public TipoUsuario getTipo() {
         return tipo;
     }
 
-    public void setTipo(String tipo) {
+    public void setTipo(TipoUsuario tipo) {
         this.tipo = tipo;
     }
 
