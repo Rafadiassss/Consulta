@@ -1,11 +1,5 @@
 {
-<<<<<<< HEAD
-    "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "interactive"
-}
-=======
   "java.compile.nullAnalysis.mode": "automatic",
   "java.configuration.updateBuildConfiguration": "interactive",
   "java.debug.settings.onBuildFailureProceed": true
 }
->>>>>>> 1b19c972bcbcc15b70fc0e087c0d6b07c2c37776
