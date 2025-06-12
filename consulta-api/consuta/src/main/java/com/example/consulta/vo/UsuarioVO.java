@@ -10,16 +10,16 @@ import java.time.LocalDate;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL) // Não inclui campos nulos no JSON
 public record UsuarioVO(
-                Long id,
-                String nome,
-                String username,
-                String email,
-                String telefone,
-                String tipo,
-                LocalDate dataNascimento,
-                // Campos específicos
-                String crm,
-                String especialidade,
-                String cpf,
-                String cartaoSus) {
+        Long id,
+        String nome,
+        String username,
+        String email,
+        String telefone,
+        String tipo,
+        LocalDate dataNascimento,
+        // Campos específicos
+        String crm,
+        String nomeEspecialidade,
+        String cpf,
+        String cartaoSus) {
 }
