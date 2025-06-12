@@ -42,7 +42,7 @@ class PacienteServiceTest {
         paciente = new Paciente();
         paciente.setNome("Carlos Souza");
         paciente.setCpf("111.222.333-44");
-        paciente.setTipo(TipoUsuario.paciente);
+        paciente.setTipo(TipoUsuario.PACIENTE);
         ReflectionTestUtils.setField(paciente, "id", 1L);
 
         pacienteRequestDTO = new PacienteRequestDTO("Carlos Souza", "carlos.s", "senha", "c@email.com", "123",
