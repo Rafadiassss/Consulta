@@ -18,7 +18,7 @@ public class Secretaria {
     private String senha;
 
     @OneToMany
-    @JoinColumn(name = "secretaria_id") // se quiser registrar quem agendou
+    @JoinColumn(name = "secretaria_id")
     private List<Consulta> consultasGerenciadas;
 
     // Construtores

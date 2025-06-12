@@ -11,7 +11,7 @@ public class Paciente extends Usuario {
 
     private String cpf;
 
-    @OneToMany(mappedBy = "paciente")
+    @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Consulta> consultas;
     @Column(name = "cartao_sus")
     private String cartaoSus;

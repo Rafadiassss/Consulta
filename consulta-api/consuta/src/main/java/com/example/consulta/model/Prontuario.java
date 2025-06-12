@@ -94,14 +94,11 @@ public class Prontuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String numero; // O número do prontuário pode ser único e imutável
+    private String numero;
 
-    // Os campos antigos (diagnostico, tratamento, observacoes) são REMOVIDOS
     // E substituídos por uma lista de entradas
     @OneToMany(mappedBy = "prontuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EntradaProntuario> entradas = new ArrayList<>();
-
-    // ... Getters e Setters para id, numero e entradas ...
 
     // Método auxiliar para adicionar uma nova entrada de forma segura
     public void adicionarEntrada(EntradaProntuario entrada) {
