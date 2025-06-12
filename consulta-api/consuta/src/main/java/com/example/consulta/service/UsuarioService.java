@@ -2,6 +2,7 @@ package com.example.consulta.service;
 
 import com.example.consulta.dto.MedicoRequestDTO;
 import com.example.consulta.dto.PacienteRequestDTO;
+import com.example.consulta.dto.UsuarioUpdateRequestDTO;
 import com.example.consulta.enums.TipoUsuario;
 import com.example.consulta.model.Especialidade;
 import com.example.consulta.model.Medico;
@@ -26,20 +27,22 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
     @Autowired
-    private EspecialidadeRepository especialidadeRepository;
+    private EspecialidadeRepository especialidadeRepository; // Necessário para criar o Médico
 
+    // Guarda a lista de usuários no cache "usuarios".
     @Cacheable("usuarios")
     public List<UsuarioVO> listarTodos() {
         return usuarioRepository.findAll().stream().map(this::toVO).collect(Collectors.toList());
     }
 
+    // Guarda um usuário individual no cache "usuario".
     @Cacheable(value = "usuario", key = "#id")
     public Optional<UsuarioVO> buscarPorId(Long id) {
         return usuarioRepository.findById(id).map(this::toVO);
     }
 
+    // Invalida a lista e adiciona/atualiza o novo médico no cache.
     @Caching(evict = { @CacheEvict(value = "usuarios", allEntries = true) }, put = {
             @CachePut(value = "usuario", key = "#result.id()") })
     public UsuarioVO salvarMedico(MedicoRequestDTO dto) {
@@ -48,6 +51,7 @@ public class UsuarioService {
         return toVO(medicoSalvo);
     }
 
+    // Invalida a lista e adiciona/atualiza o novo paciente no cache.
     @Caching(evict = { @CacheEvict(value = "usuarios", allEntries = true) }, put = {
             @CachePut(value = "usuario", key = "#result.id()") })
     public UsuarioVO salvarPaciente(PacienteRequestDTO dto) {
@@ -56,6 +60,23 @@ public class UsuarioService {
         return toVO(pacienteSalvo);
     }
 
+    // Invalida a lista e atualiza o usuário no cache.
+    @Caching(evict = { @CacheEvict(value = "usuarios", allEntries = true) }, put = {
+            @CachePut(value = "usuario", key = "#id") })
+    public Optional<UsuarioVO> atualizar(Long id, UsuarioUpdateRequestDTO dto) {
+        return usuarioRepository.findById(id)
+                .map(usuarioExistente -> {
+                    // Atualiza apenas os campos permitidos.
+                    usuarioExistente.setNome(dto.nome());
+                    usuarioExistente.setUsername(dto.username());
+                    usuarioExistente.setEmail(dto.email());
+                    usuarioExistente.setTelefone(dto.telefone());
+                    Usuario usuarioAtualizado = usuarioRepository.save(usuarioExistente);
+                    return toVO(usuarioAtualizado);
+                });
+    }
+
+    // Limpa os caches ao deletar.
     @Caching(evict = {
             @CacheEvict(value = "usuarios", allEntries = true),
             @CacheEvict(value = "usuario", key = "#id")
@@ -70,54 +91,38 @@ public class UsuarioService {
 
     // --- MÉTODOS DE MAPEAMENTO ---
 
-    // Este método deve estar na sua classe UsuarioService.java
-
     private UsuarioVO toVO(Usuario usuario) {
         String crm = null;
-        String especialidade = null; // Renomeado para evitar conflito com a entidade
+        String nomeEspecialidade = null;
         String cpf = null;
+        String cartaoSus = null;
 
-        // Verifica o tipo de usuário para preencher os campos específicos.
-        if (usuario instanceof Medico) {
-            Medico medico = (Medico) usuario;
+        if (usuario instanceof Medico medico) {
             crm = medico.getCrm();
-
-            // CORREÇÃO 1: Adiciona uma verificação para evitar NullPointerException.
-            // Só tenta pegar o nome se o objeto especialidade não for nulo.
             if (medico.getEspecialidade() != null) {
-                especialidade = medico.getEspecialidade().getNome();
+                nomeEspecialidade = medico.getEspecialidade().getNome();
             }
-
-        } else if (usuario instanceof Paciente) {
-            Paciente paciente = (Paciente) usuario;
+        } else if (usuario instanceof Paciente paciente) {
             cpf = paciente.getCpf();
+            cartaoSus = paciente.getCartaoSus();
         }
-
-        // Cria e retorna o VO com os dados corretos.
         return new UsuarioVO(
-                usuario.getId(),
-                usuario.getNome(),
-                usuario.getUsername(),
-                usuario.getEmail(),
-                usuario.getTelefone(),
-                // CORREÇÃO 2: Usa o tipo dinâmico do usuário, e não um valor fixo.
-                usuario.getTipo().name(), // Usamos .name() para pegar o nome do Enum como String
-                usuario.getDataNascimento(),
-                crm,
-                especialidade,
-                cpf);
+                usuario.getId(), usuario.getNome(), usuario.getUsername(),
+                usuario.getEmail(), usuario.getTelefone(),
+                usuario.getTipo() != null ? usuario.getTipo().name() : null,
+                usuario.getDataNascimento(), crm, nomeEspecialidade, cpf, cartaoSus);
     }
 
     private Medico toMedicoEntity(MedicoRequestDTO dto) {
-        // Lança uma exceção se a especialidade com o ID fornecido não for encontrada.
         Especialidade especialidade = especialidadeRepository.findById(dto.especialidadeId())
                 .orElseThrow(() -> new RuntimeException(
                         "Especialidade com ID " + dto.especialidadeId() + " não encontrada."));
 
         Medico medico = new Medico();
+        // ... (código do toEntity do Medico que já fizemos) ...
         medico.setNome(dto.nome());
         medico.setUsername(dto.username());
-        medico.setSenha(dto.senha());
+        medico.setSenha(dto.senha()); // Lembre-se de codificar a senha!
         medico.setEmail(dto.email());
         medico.setTelefone(dto.telefone());
         medico.setCrm(dto.crm());
@@ -128,6 +133,7 @@ public class UsuarioService {
 
     private Paciente toPacienteEntity(PacienteRequestDTO dto) {
         Paciente paciente = new Paciente();
+        // ... (código do toEntity do Paciente que já fizemos) ...
         paciente.setNome(dto.nome());
         paciente.setUsername(dto.username());
         paciente.setSenha(dto.senha());
@@ -135,28 +141,8 @@ public class UsuarioService {
         paciente.setTelefone(dto.telefone());
         paciente.setDataNascimento(dto.dataNascimento());
         paciente.setCpf(dto.cpf());
+        paciente.setCartaoSus(dto.cartaoSus());
         paciente.setTipo(TipoUsuario.paciente);
         return paciente;
-    }
-
-    public Optional<Usuario> atualizar(Long id, Usuario dadosNovos) {
-        // Busca o usuário no banco para garantir que ele existe.
-        Optional<Usuario> usuarioExistenteOptional = usuarioRepository.findById(id);
-
-        // Se o usuário não for encontrado, retorna um Optional vazio.
-        if (usuarioExistenteOptional.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // Se encontrou atualiza os campos do objeto existente.
-        Usuario usuarioParaAtualizar = usuarioExistenteOptional.get();
-        usuarioParaAtualizar.setNome(dadosNovos.getNome());
-        usuarioParaAtualizar.setUsername(dadosNovos.getUsername());
-        usuarioParaAtualizar.setEmail(dadosNovos.getEmail());
-        usuarioParaAtualizar.setTelefone(dadosNovos.getTelefone());
-        usuarioParaAtualizar.setSenha(dadosNovos.getSenha());
-
-        // Salva o usuário com os dados atualizados e o retorna.
-        return Optional.of(usuarioRepository.save(usuarioParaAtualizar));
     }
 }

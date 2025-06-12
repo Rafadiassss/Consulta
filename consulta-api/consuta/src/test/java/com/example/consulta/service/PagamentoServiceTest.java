@@ -1,7 +1,11 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.PagamentoRequestDTO;
+import com.example.consulta.model.Consulta;
 import com.example.consulta.model.Pagamento;
+import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.PagamentoRepository;
+import com.example.consulta.vo.PagamentoVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,14 +13,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -26,85 +30,76 @@ class PagamentoServiceTest {
 
     @Mock
     private PagamentoRepository pagamentoRepository;
+    @Mock
+    private ConsultaRepository consultaRepository;
 
     @InjectMocks
     private PagamentoService pagamentoService;
 
     private Pagamento pagamento;
+    private Consulta consulta;
+    private PagamentoRequestDTO pagamentoRequestDTO;
 
     @BeforeEach
     void setUp() {
-        pagamento = new Pagamento(
-                LocalDate.of(2025, 6, 10),
-                new BigDecimal("250.00"),
-                "Cartão de Crédito",
-                "CONFIRMADO");
-        // Supondo que a entidade tenha um setId para facilitar os testes.
-        // pagamento.setId(1L);
-    }
+        // Prepara uma consulta de base para associação.
+        consulta = new Consulta();
+        ReflectionTestUtils.setField(consulta, "id", 1L);
 
-    @Test
-    @DisplayName("Deve listar todos os pagamentos")
-    void listarTodos() {
-        // Simula o repositório retornando uma lista com um pagamento.
-        when(pagamentoRepository.findAll()).thenReturn(Collections.singletonList(pagamento));
+        // Prepara um pagamento de base, já associado à consulta.
+        pagamento = new Pagamento(LocalDate.now(), new BigDecimal("150.00"), "PIX", "CONFIRMADO");
+        pagamento.setConsulta(consulta);
+        ReflectionTestUtils.setField(pagamento, "id", 1L);
 
-        // Chama o método de serviço.
-        List<Pagamento> resultado = pagamentoService.listarTodos();
-
-        // Verifica se o resultado está correto.
-        assertThat(resultado).isNotNull().hasSize(1);
-    }
-
-    @Test
-    @DisplayName("Deve buscar um pagamento por ID existente")
-    void buscarPorId_quandoEncontrado() {
-        // Simula o repositório encontrando o pagamento pelo ID.
-        when(pagamentoRepository.findById(1L)).thenReturn(Optional.of(pagamento));
-
-        // Chama o método de serviço.
-        Optional<Pagamento> resultado = pagamentoService.buscarPorId(1L);
-
-        // Verifica se o pagamento foi encontrado.
-        assertThat(resultado).isPresent();
-    }
-
-    @Test
-    @DisplayName("Deve retornar um Optional vazio ao buscar por ID inexistente")
-    void buscarPorId_quandoNaoEncontrado() {
-        // Simula o repositório não encontrando o pagamento.
-        when(pagamentoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        // Chama o método de serviço.
-        Optional<Pagamento> resultado = pagamentoService.buscarPorId(99L);
-
-        // Verifica se o resultado está vazio.
-        assertThat(resultado).isEmpty();
+        // Prepara um DTO para as requisições.
+        pagamentoRequestDTO = new PagamentoRequestDTO(LocalDate.now(), new BigDecimal("150.00"), "PIX", "PENDENTE", 1L);
     }
 
     @Test
     @DisplayName("Deve salvar um pagamento com sucesso")
-    void salvar() {
-        // Simula o repositório salvando e retornando o pagamento.
+    void salvar_comSucesso() {
+        // Simula o repositório encontrando a consulta associada.
+        when(consultaRepository.findById(1L)).thenReturn(Optional.of(consulta));
+        // Simula a ação de salvar, que retorna a entidade com ID.
         when(pagamentoRepository.save(any(Pagamento.class))).thenReturn(pagamento);
 
-        // Chama o serviço para salvar.
-        Pagamento resultado = pagamentoService.salvar(new Pagamento());
+        // Chama o método de serviço com o DTO.
+        PagamentoVO resultado = pagamentoService.salvar(pagamentoRequestDTO);
 
-        // Verifica se o pagamento foi retornado.
+        // Verifica se o VO retornado tem os dados esperados.
         assertThat(resultado).isNotNull();
+        assertThat(resultado.id()).isEqualTo(1L);
+        assertThat(resultado.consultaId()).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("Deve deletar um pagamento por ID")
-    void deletar() {
-        // Configura o mock para a chamada de 'deleteById'.
+    @DisplayName("Deve lançar exceção ao salvar se a consulta associada não existir")
+    void salvar_quandoConsultaNaoExiste() {
+        // Simula o repositório NÃO encontrando a consulta.
+        when(consultaRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // Verifica se a chamada ao serviço lança a exceção esperada.
+        assertThrows(RuntimeException.class, () -> {
+            pagamentoService.salvar(pagamentoRequestDTO);
+        });
+
+        // Garante que, com o erro, o pagamento nunca foi salvo.
+        verify(pagamentoRepository, never()).save(any(Pagamento.class));
+    }
+
+    @Test
+    @DisplayName("Deve deletar um pagamento existente e retornar true")
+    void deletar_quandoEncontrado() {
+        // Simula que o pagamento existe.
+        when(pagamentoRepository.existsById(1L)).thenReturn(true);
+        // Configura a chamada ao método 'deleteById'.
         doNothing().when(pagamentoRepository).deleteById(1L);
 
-        // Chama o serviço para deletar.
-        pagamentoService.deletar(1L);
+        // Chama o método de serviço.
+        boolean resultado = pagamentoService.deletar(1L);
 
-        // Confirma que o método do repositório foi invocado.
-        verify(pagamentoRepository, times(1)).deleteById(1L);
+        // Verifica o resultado e a chamada ao repositório.
+        assertThat(resultado).isTrue();
+        verify(pagamentoRepository).deleteById(1L);
     }
 }

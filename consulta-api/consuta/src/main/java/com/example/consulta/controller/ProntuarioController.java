@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,8 +32,11 @@ public class ProntuarioController {
         this.assembler = assembler;
     }
 
+    // Este método vai retornar uma resposta HTTP, mas o tipo do objeto no corpo
+    // pode variar. Pode ser um modelo de sucesso, uma String de erro, ou até mesmo
+    // vazio por isso usar o '?'.
     @PostMapping("/{idUsuario}")
-    public ResponseEntity<EntityModel<ProntuarioVO>> criarProntuario(
+    public ResponseEntity<?> criarProntuario(
             @PathVariable Long idUsuario,
             @RequestBody @Valid ProntuarioRequestDTO dto) throws IllegalArgumentException {
 
@@ -43,7 +47,9 @@ public class ProntuarioController {
             EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioVO);
             // Retorna 201 Created com o modelo no corpo.
             return ResponseEntity.status(HttpStatus.CREATED).body(prontuarioModel);
-
+        } catch (IllegalArgumentException e) {
+            // Se o usuário não for médico, retorna 403 Forbidden.
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (RuntimeException e) { // Captura o "Usuário não encontrado"
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

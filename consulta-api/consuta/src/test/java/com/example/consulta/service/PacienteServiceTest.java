@@ -1,7 +1,10 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.PacienteRequestDTO;
+import com.example.consulta.enums.TipoUsuario;
 import com.example.consulta.model.Paciente;
 import com.example.consulta.repository.PacienteRepository;
+import com.example.consulta.vo.PacienteVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,12 +12,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,48 +35,49 @@ class PacienteServiceTest {
     private PacienteService pacienteService;
 
     private Paciente paciente;
+    private PacienteRequestDTO pacienteRequestDTO;
 
     @BeforeEach
     void setUp() {
         paciente = new Paciente();
-        paciente.setId(1L);
         paciente.setNome("Carlos Souza");
         paciente.setCpf("111.222.333-44");
+        paciente.setTipo(TipoUsuario.paciente);
+        ReflectionTestUtils.setField(paciente, "id", 1L);
+
+        pacienteRequestDTO = new PacienteRequestDTO("Carlos Souza", "carlos.s", "senha", "c@email.com", "123",
+                LocalDate.now().minusYears(20), "111.222.333-44", "98765");
     }
 
     @Test
-    @DisplayName("Deve buscar um paciente por ID existente")
-    void buscarPorId_quandoEncontrado() {
-        when(pacienteRepository.findById(1L)).thenReturn(Optional.of(paciente));
-        Optional<Paciente> resultado = pacienteService.buscarPorId(1L);
-        assertThat(resultado).isPresent();
+    @DisplayName("Deve listar todos os pacientes")
+    void listarTodos() {
+        when(pacienteRepository.findAll()).thenReturn(Collections.singletonList(paciente));
+        List<PacienteVO> resultado = pacienteService.listarTodos();
+        assertThat(resultado).isNotNull().hasSize(1);
     }
 
     @Test
     @DisplayName("Deve salvar um paciente com sucesso")
     void salvar() {
         when(pacienteRepository.save(any(Paciente.class))).thenReturn(paciente);
-        Paciente resultado = pacienteService.salvar(new Paciente());
+
+        PacienteVO resultado = pacienteService.salvar(pacienteRequestDTO);
+
         assertThat(resultado).isNotNull();
+        assertThat(resultado.cpf()).isEqualTo("111.222.333-44");
     }
 
     @Test
     @DisplayName("Deve atualizar um paciente existente com sucesso")
     void atualizar_quandoEncontrado() {
-        Paciente dadosNovos = new Paciente();
-        dadosNovos.setCpf("999.999.999-99");
-
-        // Simula a busca do paciente que será atualizado.
         when(pacienteRepository.findById(1L)).thenReturn(Optional.of(paciente));
-        // Simula a ação de salvar, retornando o paciente com os dados já atualizados.
-        when(pacienteRepository.save(any(Paciente.class))).thenReturn(dadosNovos);
+        when(pacienteRepository.save(any(Paciente.class))).thenReturn(paciente);
 
-        // Chama o método de serviço.
-        Paciente resultado = pacienteService.atualizar(1L, dadosNovos);
+        Optional<PacienteVO> resultado = pacienteService.atualizar(1L, pacienteRequestDTO);
 
-        // Verifica se o paciente retornado tem os dados atualizados.
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.getCpf()).isEqualTo("999.999.999-99");
+        assertThat(resultado).isPresent();
+        verify(pacienteRepository).save(any(Paciente.class));
     }
 
     @Test
@@ -78,20 +86,36 @@ class PacienteServiceTest {
         // Simula que o paciente com ID 99 não foi encontrado.
         when(pacienteRepository.findById(99L)).thenReturn(Optional.empty());
 
-        // Verifica se a chamada ao serviço lança a exceção esperada.
-        assertThrows(RuntimeException.class, () -> {
-            pacienteService.atualizar(99L, new Paciente());
-        });
+        // Chama o método de serviço.
+        Optional<PacienteVO> resultado = pacienteService.atualizar(99L, pacienteRequestDTO);
+
+        // A verificação espera um Optional vazio.
+        assertThat(resultado).isEmpty();
 
         // Garante que o método 'save' NUNCA foi chamado neste cenário.
         verify(pacienteRepository, never()).save(any(Paciente.class));
     }
 
     @Test
-    @DisplayName("Deve deletar um paciente por ID")
-    void deletar() {
+    @DisplayName("Deve deletar um paciente existente e retornar true")
+    void deletar_quandoEncontrado() {
+        when(pacienteRepository.existsById(1L)).thenReturn(true);
         doNothing().when(pacienteRepository).deleteById(1L);
-        pacienteService.deletar(1L);
-        verify(pacienteRepository, times(1)).deleteById(1L);
+
+        boolean resultado = pacienteService.deletar(1L);
+
+        assertThat(resultado).isTrue();
+        verify(pacienteRepository).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("Deve retornar false ao tentar deletar paciente inexistente")
+    void deletar_quandoNaoEncontrado() {
+        when(pacienteRepository.existsById(99L)).thenReturn(false);
+
+        boolean resultado = pacienteService.deletar(99L);
+
+        assertThat(resultado).isFalse();
+        verify(pacienteRepository, never()).deleteById(anyLong());
     }
 }

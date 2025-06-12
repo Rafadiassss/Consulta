@@ -1,7 +1,9 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.model.Procedimento;
+import com.example.consulta.dto.ProcedimentoRequestDTO;
+import com.example.consulta.hateoas.ProcedimentoModelAssembler;
 import com.example.consulta.service.ProcedimentoService;
+import com.example.consulta.vo.ProcedimentoVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,111 +11,107 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ProcedimentoController.class)
-@DisplayName("Testes do Controller de Procedimentos")
+@DisplayName("Testes do Controller de Procedimentos (API com HATEOAS)")
 class ProcedimentoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
 
     @MockBean
     private ProcedimentoService procedimentoService;
+    @MockBean
+    private ProcedimentoModelAssembler assembler;
 
-    private Procedimento procedimento;
+    private ProcedimentoVO procedimentoVO;
+    private ProcedimentoRequestDTO procedimentoRequestDTO;
+    private EntityModel<ProcedimentoVO> procedimentoModel;
 
     @BeforeEach
     void setUp() {
-        // Objeto base que simula um procedimento já existente no banco de dados.
-        procedimento = new Procedimento();
-        procedimento.setId(1L);
-        procedimento.setNome("Consulta Padrão");
-        procedimento.setDescricao("Consulta médica de rotina.");
-        procedimento.setValor(250.00);
+        procedimentoVO = new ProcedimentoVO(1L, "Consulta de Rotina", "Consulta médica de rotina.", 250.0);
+        procedimentoRequestDTO = new ProcedimentoRequestDTO("Consulta de Rotina", "Consulta médica de rotina.", 250.0);
+        procedimentoModel = EntityModel.of(procedimentoVO,
+                linkTo(methodOn(ProcedimentoController.class).buscarPorId(1L)).withSelfRel());
     }
 
     @Test
-    @DisplayName("Deve listar todos os procedimentos")
-    void listarTodos() throws Exception {
-        // Configura o mock do serviço para retornar uma lista com o procedimento de
-        // teste.
-        when(procedimentoService.listarTodos()).thenReturn(Collections.singletonList(procedimento));
-
-        // Executa a requisição GET e verifica a resposta.
-        mockMvc.perform(get("/procedimentos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nome", is("Consulta Padrão")));
-    }
-
-    @Test
-    @DisplayName("Deve buscar um procedimento por ID existente")
+    @DisplayName("Deve buscar um procedimento por ID existente e retornar status 200 OK")
     void buscarPorId_quandoEncontrado() throws Exception {
-        // Configura o mock para encontrar o procedimento com ID 1.
-        when(procedimentoService.buscarPorId(1L)).thenReturn(Optional.of(procedimento));
+        // Simula o serviço encontrando o procedimento e o assembler convertendo o VO.
+        when(procedimentoService.buscarPorId(1L)).thenReturn(Optional.of(procedimentoVO));
+        when(assembler.toModel(procedimentoVO)).thenReturn(procedimentoModel);
 
-        // Executa a requisição GET e verifica os dados retornados.
+        // Executa a requisição e verifica a resposta HATEOAS.
         mockMvc.perform(get("/procedimentos/{id}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.valor", is(250.00)));
+                .andExpect(jsonPath("$.nome", is("Consulta de Rotina")))
+                .andExpect(jsonPath("$._links.self.href", containsString("/procedimentos/1")));
     }
 
     @Test
-    @DisplayName("Deve retornar corpo vazio ao buscar por ID inexistente")
+    @DisplayName("Deve retornar status 404 Not Found ao buscar por ID inexistente")
     void buscarPorId_quandoNaoEncontrado() throws Exception {
-        // Configura o mock para não encontrar o procedimento com ID 99.
+        // Simula o serviço não encontrando o procedimento.
         when(procedimentoService.buscarPorId(99L)).thenReturn(Optional.empty());
 
-        // Executa a requisição GET para um ID que não existe.
+        // Executa a requisição e verifica o 404.
         mockMvc.perform(get("/procedimentos/{id}", 99L))
-                // Por padrão, Spring retorna 200 OK com corpo vazio para um Optional.empty().
-                .andExpect(status().isNotFound())
-                .andExpect(content().string(""));
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("Deve salvar um novo procedimento")
-    void salvarProcedimento() throws Exception {
-        // Configura o mock do serviço para retornar o procedimento salvo.
-        when(procedimentoService.salvar(any(Procedimento.class))).thenReturn(procedimento);
+    @DisplayName("Deve salvar um novo procedimento e retornar status 201 Created")
+    void salvar() throws Exception {
+        // Simula o serviço e o assembler.
+        when(procedimentoService.salvar(any(ProcedimentoRequestDTO.class))).thenReturn(procedimentoVO);
+        when(assembler.toModel(procedimentoVO)).thenReturn(procedimentoModel);
 
-        // Executa a requisição POST com um objeto no corpo.
+        // Executa a requisição POST.
         mockMvc.perform(post("/procedimentos")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(procedimento)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome", is("Consulta Padrão")));
-
-        // Garante que o método 'salvar' do serviço foi chamado.
-        verify(procedimentoService, times(1)).salvar(any(Procedimento.class));
+                .content(objectMapper.writeValueAsString(procedimentoRequestDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", containsString("/procedimentos/1")));
     }
 
     @Test
-    @DisplayName("Deve deletar um procedimento existente")
-    void deletarProcedimento() throws Exception {
-        // Configura o mock do serviço para o método 'deletar', que é void.
-        doNothing().when(procedimentoService).deletar(1L);
+    @DisplayName("Deve deletar um procedimento existente e retornar status 204 No Content")
+    void deletar_quandoEncontrado() throws Exception {
+        // Simula o serviço retornando 'true' para a exclusão.
+        when(procedimentoService.deletar(1L)).thenReturn(true);
 
-        // Executa a requisição DELETE para /procedimentos/1.
+        // Executa a requisição DELETE.
         mockMvc.perform(delete("/procedimentos/{id}", 1L))
-                // Um método de controller 'void' retorna 200 OK por padrão.
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
+    }
 
-        // Garante que o método 'deletar' do serviço foi chamado com o ID correto.
-        verify(procedimentoService, times(1)).deletar(1L);
+    @Test
+    @DisplayName("Deve retornar status 404 Not Found ao tentar deletar procedimento inexistente")
+    void deletar_quandoNaoEncontrado() throws Exception {
+        // Simula o serviço retornando 'false' para a exclusão.
+        when(procedimentoService.deletar(99L)).thenReturn(false);
+
+        // Executa a requisição DELETE.
+        mockMvc.perform(delete("/procedimentos/{id}", 99L))
+                .andExpect(status().isNotFound());
     }
 }
