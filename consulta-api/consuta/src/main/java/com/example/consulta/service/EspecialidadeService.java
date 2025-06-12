@@ -3,6 +3,7 @@ package com.example.consulta.service;
 import com.example.consulta.dto.EspecialidadeRequestDTO;
 import com.example.consulta.model.Especialidade;
 import com.example.consulta.repository.EspecialidadeRepository;
+import com.example.consulta.repository.MedicoRepository;
 import com.example.consulta.vo.EspecialidadeVO; // Importa o VO
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Caching;
@@ -17,8 +18,16 @@ import java.util.stream.Collectors;
 @Service
 public class EspecialidadeService {
 
+    private final MedicoService medicoService;
+
     @Autowired
     private EspecialidadeRepository especialidadeRepository;
+    @Autowired
+    private MedicoRepository medicoRepository;
+
+    EspecialidadeService(MedicoService medicoService) {
+        this.medicoService = medicoService;
+    }
 
     public List<EspecialidadeVO> listarTodas() {
         return especialidadeRepository.findAll()
@@ -59,11 +68,21 @@ public class EspecialidadeService {
             @CacheEvict(value = "especialidade", key = "#id") // Remove o item específico
     })
     public boolean deletar(Long id) {
+        // Primeiro verifica se essa especialidade possui um medico vinculada a ela.
+        if (medicoRepository.existsByEspecialidadeId(id)) {
+            // Se tiver, lança uma exceção informando que não é possivel deletar uma
+            // especialidade vinculada a um medico.
+            throw new IllegalStateException("Não é possivel deletar uma especialidade vinculada a um médico!!");
+        }
         System.out.println("Deletando especialidade de ID " + id + "...");
+        // Agora, se essa especialidade existir com esse ID e não tiver nenhum medico
+        // vinculado a ela, então pode deletar
         if (especialidadeRepository.existsById(id)) {
             especialidadeRepository.deleteById(id);
+            // Retorna verdadeiro já que o metodo é um boolean
             return true;
         }
+        // Se não conseguir deletar, então retorna um 'false' pro boolean
         return false;
     }
 
