@@ -119,10 +119,9 @@ public class UsuarioService {
                         "Especialidade com ID " + dto.especialidadeId() + " não encontrada."));
 
         Medico medico = new Medico();
-        // ... (código do toEntity do Medico que já fizemos) ...
         medico.setNome(dto.nome());
         medico.setUsername(dto.username());
-        medico.setSenha(dto.senha()); // Lembre-se de codificar a senha!
+        medico.setSenha(dto.senha());
         medico.setEmail(dto.email());
         medico.setTelefone(dto.telefone());
         medico.setCrm(dto.crm());
@@ -133,7 +132,6 @@ public class UsuarioService {
 
     private Paciente toPacienteEntity(PacienteRequestDTO dto) {
         Paciente paciente = new Paciente();
-        // ... (código do toEntity do Paciente que já fizemos) ...
         paciente.setNome(dto.nome());
         paciente.setUsername(dto.username());
         paciente.setSenha(dto.senha());

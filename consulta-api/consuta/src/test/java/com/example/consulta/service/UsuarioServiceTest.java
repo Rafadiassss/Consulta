@@ -68,7 +68,7 @@ class UsuarioServiceTest {
         // Verifica se o VO foi criado com os campos específicos de Medico.
         assertThat(resultado).isPresent();
         assertThat(resultado.get().crm()).isEqualTo("12345-SP");
-        assertThat(resultado.get().especialidade()).isEqualTo("Cardiologia");
+        assertThat(resultado.get().nomeEspecialidade()).isEqualTo("Cardiologia");
         assertThat(resultado.get().cpf()).isNull();
     }
 
