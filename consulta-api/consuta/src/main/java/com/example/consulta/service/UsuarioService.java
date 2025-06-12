@@ -127,7 +127,7 @@ public class UsuarioService {
         medico.setTelefone(dto.telefone());
         medico.setCrm(dto.crm());
         medico.setEspecialidade(especialidade);
-        medico.setTipo(TipoUsuario.medico);
+        medico.setTipo(TipoUsuario.MEDICO);
         return medico;
     }
 
@@ -142,7 +142,7 @@ public class UsuarioService {
         paciente.setDataNascimento(dto.dataNascimento());
         paciente.setCpf(dto.cpf());
         paciente.setCartaoSus(dto.cartaoSus());
-        paciente.setTipo(TipoUsuario.paciente);
+        paciente.setTipo(TipoUsuario.PACIENTE);
         return paciente;
     }
 }
