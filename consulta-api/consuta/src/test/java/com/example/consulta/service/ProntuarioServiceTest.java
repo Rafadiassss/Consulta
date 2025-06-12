@@ -43,11 +43,11 @@ class ProntuarioServiceTest {
     @BeforeEach
     void setUp() {
         medico = new Usuario();
-        medico.setTipo(TipoUsuario.medico);
+        medico.setTipo(TipoUsuario.MEDICO);
         ReflectionTestUtils.setField(medico, "id", 1L);
 
         paciente = new Usuario();
-        paciente.setTipo(TipoUsuario.medico);
+        paciente.setTipo(TipoUsuario.MEDICO);
         ReflectionTestUtils.setField(paciente, "id", 2L);
 
         prontuario = new Prontuario();

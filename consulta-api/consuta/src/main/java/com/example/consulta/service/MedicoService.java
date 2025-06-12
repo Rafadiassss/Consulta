@@ -124,7 +124,7 @@ public class MedicoService {
         medico.setTelefone(dto.telefone());
         medico.setCrm(dto.crm());
         medico.setEspecialidade(especialidade);
-        medico.setTipo(TipoUsuario.medico);
+        medico.setTipo(TipoUsuario.MEDICO);
         return medico;
     }
 }

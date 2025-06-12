@@ -32,7 +32,7 @@ public class ProntuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuário (médico) não encontrado."));
 
         // Valida a permissão. Se não for médico lança IllegalArgumentException.
-        if (usuario.getTipo() != TipoUsuario.medico) {
+        if (usuario.getTipo() != TipoUsuario.MEDICO) {
             throw new IllegalArgumentException("Apenas médicos podem criar prontuários.");
         }
 
@@ -47,7 +47,7 @@ public class ProntuarioService {
         // Valida o usuário.
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
-        if (usuario.getTipo() != TipoUsuario.medico) {
+        if (usuario.getTipo() != TipoUsuario.MEDICO) {
             throw new IllegalArgumentException("Apenas médicos podem visualizar prontuários.");
         }
 

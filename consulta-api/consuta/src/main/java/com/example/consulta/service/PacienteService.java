@@ -113,7 +113,7 @@ public class PacienteService {
         paciente.setCpf(dto.cpf());
         paciente.setCartaoSus(dto.cartaoSus());
         // Define o tipo usando o Enum correto (em maiúsculas).
-        paciente.setTipo(TipoUsuario.paciente);
+        paciente.setTipo(TipoUsuario.PACIENTE);
         // Retorna a entidade pronta para ser salva.
         return paciente;
     }
