@@ -4,6 +4,8 @@ import com.example.consulta.dto.ConsultaRequestDTO;
 import com.example.consulta.hateoas.ConsultaModelAssembler; // Importa o Assembler
 import com.example.consulta.service.ConsultaService;
 import com.example.consulta.vo.ConsultaVO;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
@@ -20,6 +22,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/consultas")
+@Tag(name = "Consultas", description = "Operações para gerenciar as Consultas")
 public class ConsultaController {
 
     @Autowired

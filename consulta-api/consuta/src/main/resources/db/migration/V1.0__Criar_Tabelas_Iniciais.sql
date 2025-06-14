@@ -1,4 +1,4 @@
--- Script de criação para PostgreSQL
+-- Criar tabelas
 
 CREATE TABLE especialidade (
     id BIGSERIAL PRIMARY KEY,
@@ -51,52 +51,50 @@ CREATE TABLE entrada_prontuario (
     diagnostico TEXT,
     tratamento TEXT,
     observacoes TEXT,
-    prontuario_id BIGINT,
-    FOREIGN KEY (prontuario_id) REFERENCES prontuario(id)
+    prontuario_id BIGINT NOT NULL,
+    FOREIGN KEY (prontuario_id) REFERENCES prontuario(id) ON DELETE CASCADE
 );
 
 CREATE TABLE consulta (
     id BIGSERIAL PRIMARY KEY,
-    data TIMESTAMP,
-    status VARCHAR(255),
+    data TIMESTAMP NOT NULL,
+    status VARCHAR(255) NOT NULL,
     nome_consulta VARCHAR(255),
-    paciente_id BIGINT,
-    medico_id BIGINT,
-    pagamento_id BIGINT UNIQUE,
-    prontuario_id BIGINT UNIQUE,
+    paciente_id BIGINT NOT NULL,
+    medico_id BIGINT NOT NULL,
+    prontuario_id BIGINT UNIQUE NOT NULL,
     FOREIGN KEY (paciente_id) REFERENCES usuarios(id),
     FOREIGN KEY (medico_id) REFERENCES usuarios(id),
-    FOREIGN KEY (prontuario_id) REFERENCES prontuario(id)
+    FOREIGN KEY (prontuario_id) REFERENCES prontuario(id) ON DELETE CASCADE
 );
 
 CREATE TABLE pagamento (
     id BIGSERIAL PRIMARY KEY,
-    data_pagamento DATE,
-    valor_pago DECIMAL(19,2),
+    data_pagamento DATE NOT NULL,
+    valor_pago DECIMAL(19,2) NOT NULL,
     forma_pagamento VARCHAR(255),
-    status VARCHAR(255),
-    consulta_id BIGINT,
-    FOREIGN KEY (consulta_id) REFERENCES consulta(id)
+    status VARCHAR(255)
+    
 );
-
-ALTER TABLE consulta ADD CONSTRAINT fk_pagamento FOREIGN KEY (pagamento_id) REFERENCES pagamento(id);
 
 CREATE TABLE exame (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(255),
     resultado TEXT,
     observacoes TEXT,
-    consulta_id BIGINT,
-    FOREIGN KEY (consulta_id) REFERENCES consulta(id)
+    consulta_id BIGINT NOT NULL,
+    FOREIGN KEY (consulta_id) REFERENCES consulta(id) ON DELETE CASCADE
 );
 
 CREATE TABLE agenda (
     id BIGSERIAL PRIMARY KEY,
-    data_agendada DATE
+    data_agendada DATE NOT NULL
 );
 
 CREATE TABLE agenda_horarios (
     agenda_id BIGINT NOT NULL,
-    horarios TIME,
-    FOREIGN KEY (agenda_id) REFERENCES agenda(id)
+    horarios TIME NOT NULL,
+    FOREIGN KEY (agenda_id) REFERENCES agenda(id) ON DELETE CASCADE,
+    PRIMARY KEY (agenda_id, horarios)
 );
+

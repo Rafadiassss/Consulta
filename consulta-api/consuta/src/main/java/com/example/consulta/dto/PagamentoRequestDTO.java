@@ -16,7 +16,5 @@ public record PagamentoRequestDTO(
 
         @NotBlank(message = "A forma de pagamento não pode ser vazia") String formaPagamento,
 
-        @NotBlank(message = "O status não pode ser vazio") String status,
-
-        @NotNull(message = "O ID da consulta é obrigatório") Long consultaId) {
+        @NotBlank(message = "O status não pode ser vazio") String status) {
 }

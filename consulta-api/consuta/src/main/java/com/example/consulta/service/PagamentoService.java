@@ -1,9 +1,7 @@
 package com.example.consulta.service;
 
 import com.example.consulta.dto.PagamentoRequestDTO;
-import com.example.consulta.model.Consulta;
 import com.example.consulta.model.Pagamento;
-import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.PagamentoRepository;
 import com.example.consulta.vo.PagamentoVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +20,6 @@ public class PagamentoService {
 
     @Autowired
     private PagamentoRepository pagamentoRepository;
-    @Autowired
-    private ConsultaRepository consultaRepository;
 
     // Guarda o resultado deste método no cache "pagamentos".
     @Cacheable("pagamentos")
@@ -58,16 +54,11 @@ public class PagamentoService {
         // Busca o pagamento existente pelo ID.
         return pagamentoRepository.findById(id)
                 .map(pagamentoExistente -> {
-                    // Busca a entidade Consulta pelo ID fornecido no DTO.
-                    Consulta consulta = consultaRepository.findById(dto.consultaId())
-                            .orElseThrow(() -> new RuntimeException("Consulta não encontrada para o pagamento."));
-
                     // Atualiza os campos do pagamento existente com os dados do DTO.
                     pagamentoExistente.setDataPagamento(dto.dataPagamento());
                     pagamentoExistente.setValorPago(dto.valorPago());
                     pagamentoExistente.setFormaPagamento(dto.formaPagamento());
                     pagamentoExistente.setStatus(dto.status());
-                    pagamentoExistente.setConsulta(consulta);
 
                     // Salva a entidade atualizada.
                     Pagamento pagamentoAtualizado = pagamentoRepository.save(pagamentoExistente);
@@ -96,25 +87,19 @@ public class PagamentoService {
 
     // Converte uma Entidade 'Pagamento' para um 'PagamentoVO'.
     private PagamentoVO toVO(Pagamento pagamento) {
-        // Obtém o ID da consulta associada de forma segura, evitando
-        // NullPointerException.
-        Long consultaId = (pagamento.getConsulta() != null) ? pagamento.getConsulta().getId() : null;
-        // Retorna o novo VO.
+        // Retorna o novo VO sem o campo consultaId.
         return new PagamentoVO(
                 pagamento.getId(),
                 pagamento.getDataPagamento(),
                 pagamento.getValorPago(),
                 pagamento.getFormaPagamento(),
                 pagamento.getStatus(),
-                consultaId);
+                null // Consulta removida
+        );
     }
 
     // Converte um 'PagamentoRequestDTO' para uma Entidade 'Pagamento'.
     private Pagamento toEntity(PagamentoRequestDTO dto) {
-        // Busca a entidade Consulta pelo ID fornecido no DTO para criar a associação.
-        Consulta consulta = consultaRepository.findById(dto.consultaId())
-                .orElseThrow(() -> new RuntimeException("Consulta com ID " + dto.consultaId() + " não encontrada."));
-
         // Cria uma nova instância da entidade.
         Pagamento pagamento = new Pagamento();
         // Define os campos da entidade com os valores do DTO.
@@ -122,7 +107,6 @@ public class PagamentoService {
         pagamento.setValorPago(dto.valorPago());
         pagamento.setFormaPagamento(dto.formaPagamento());
         pagamento.setStatus(dto.status());
-        pagamento.setConsulta(consulta);
         // Retorna a entidade pronta para ser salva.
         return pagamento;
     }

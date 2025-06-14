@@ -1,12 +1,10 @@
--- Isso acontece por causa dos relacionamentos entre as tabelas
--- Garante que o próximo ID gerado pelo banco será maior que o último ID inserido manualmente.
-SELECT setval('especialidade_id_seq', (SELECT MAX(id) FROM especialidade));
-SELECT setval('procedimento_id_seq', (SELECT MAX(id) FROM procedimento));
-SELECT setval('secretaria_id_seq', (SELECT MAX(id) FROM secretaria));
-SELECT setval('usuarios_id_seq', (SELECT MAX(id) FROM usuarios));
-SELECT setval('prontuario_id_seq', (SELECT MAX(id) FROM prontuario));
-SELECT setval('entrada_prontuario_id_seq', (SELECT MAX(id) FROM entrada_prontuario));
-SELECT setval('consulta_id_seq', (SELECT MAX(id) FROM consulta));
-SELECT setval('pagamento_id_seq', (SELECT MAX(id) FROM pagamento));
-SELECT setval('exame_id_seq', (SELECT MAX(id) FROM exame));
-SELECT setval('agenda_id_seq', (SELECT MAX(id) FROM agenda));
+SELECT setval(pg_get_serial_sequence('especialidade', 'id'), (SELECT COALESCE(MAX(id),1) FROM especialidade));
+SELECT setval(pg_get_serial_sequence('procedimento', 'id'), (SELECT COALESCE(MAX(id),1) FROM procedimento));
+SELECT setval(pg_get_serial_sequence('secretaria', 'id'), (SELECT COALESCE(MAX(id),1) FROM secretaria));
+SELECT setval(pg_get_serial_sequence('usuarios', 'id'), (SELECT COALESCE(MAX(id),1) FROM usuarios));
+SELECT setval(pg_get_serial_sequence('prontuario', 'id'), (SELECT COALESCE(MAX(id),1) FROM prontuario));
+SELECT setval(pg_get_serial_sequence('entrada_prontuario', 'id'), (SELECT COALESCE(MAX(id),1) FROM entrada_prontuario));
+SELECT setval(pg_get_serial_sequence('consulta', 'id'), (SELECT COALESCE(MAX(id),1) FROM consulta));
+SELECT setval(pg_get_serial_sequence('pagamento', 'id'), (SELECT COALESCE(MAX(id),1) FROM pagamento));
+SELECT setval(pg_get_serial_sequence('exame', 'id'), (SELECT COALESCE(MAX(id),1) FROM exame));
+SELECT setval(pg_get_serial_sequence('agenda', 'id'), (SELECT COALESCE(MAX(id),1) FROM agenda));

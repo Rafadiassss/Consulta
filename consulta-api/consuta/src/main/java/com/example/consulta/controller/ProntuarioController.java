@@ -5,6 +5,8 @@ import com.example.consulta.dto.ProntuarioRequestDTO;
 import com.example.consulta.hateoas.ProntuarioModelAssembler;
 import com.example.consulta.service.ProntuarioService;
 import com.example.consulta.vo.ProntuarioVO;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
@@ -13,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,7 @@ import org.springframework.hateoas.CollectionModel;
 
 @RestController
 @RequestMapping("/prontuarios")
+@Tag(name = "Prontuarios", description = "Operações para gerenciar os prontuarios")
 public class ProntuarioController {
 
     private final ProntuarioService prontuarioService;

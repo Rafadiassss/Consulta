@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Pagamento {
@@ -19,10 +18,6 @@ public class Pagamento {
     private String formaPagamento;
     private String status;
 
-    @ManyToOne
-    @JoinColumn(name = "consulta_id")
-    @JsonBackReference
-    private Consulta consulta;
 
     // Construtores
     public Pagamento() {
@@ -70,14 +65,6 @@ public class Pagamento {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public Consulta getConsulta() {
-        return consulta;
-    }
-
-    public void setConsulta(Consulta consulta) {
-        this.consulta = consulta;
     }
 
     // Método para confirmar pagamento
