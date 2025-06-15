@@ -1,10 +1,10 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.dto.ProntuarioRequestDTO;
-import com.example.consulta.hateoas.ProntuarioModelAssembler;
-import com.example.consulta.service.ProntuarioService;
-import com.example.consulta.vo.EntradaProntuarioVO;
-import com.example.consulta.vo.ProntuarioVO;
+import com.example.consulta.dto.ConsultaRequestDTO;
+import com.example.consulta.hateoas.ConsultaModelAssembler;
+import com.example.consulta.service.ConsultaService;
+import com.example.consulta.vo.EntradaConsultaVO;
+import com.example.consulta.vo.ConsultaVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ProntuarioController.class)
+@WebMvcTest(ConsultaController.class)
 @DisplayName("Testes do Controller de Prontuários (API)")
 class ProntuarioControllerTest {
 
@@ -38,28 +38,28 @@ class ProntuarioControllerTest {
         private ObjectMapper objectMapper;
 
         @MockBean
-        private ProntuarioService prontuarioService;
+        private ConsultaService prontuarioService;
         @MockBean
-        private ProntuarioModelAssembler assembler;
+        private ConsultaModelAssembler assembler;
 
-        private ProntuarioVO prontuarioVO;
-        private ProntuarioRequestDTO prontuarioRequestDTO;
+        private ConsultaVO prontuarioVO;
+        private ConsultaRequestDTO prontuarioRequestDTO;
 
         @BeforeEach
         void setUp() {
-                EntradaProntuarioVO entradaVO = new EntradaProntuarioVO(1L, LocalDateTime.now(), "Diagnóstico",
+                EntradaConsultaVO entradaVO = new EntradaConsultaVO(1L, LocalDateTime.now(), "Diagnóstico",
                                 "Tratamento", "Obs");
-                prontuarioVO = new ProntuarioVO(10L, "PRT-001", Collections.singletonList(entradaVO));
-                prontuarioRequestDTO = new ProntuarioRequestDTO("PRT-001");
+                prontuarioVO = new ConsultaVO(10L, "PRT-001", Collections.singletonList(entradaVO));
+                prontuarioRequestDTO = new ConsultaRequestDTO("PRT-001");
         }
 
         @Test
         @DisplayName("Deve criar um prontuário e retornar status 201 Created")
         void criarProntuario_comSucesso() throws Exception {
                 // Prepara o modelo HATEOAS esperado.
-                EntityModel<ProntuarioVO> prontuarioModel = EntityModel.of(prontuarioVO);
+                EntityModel<ConsultaVO> prontuarioModel = EntityModel.of(prontuarioVO);
                 // Simula o serviço retornando o VO com sucesso.
-                when(prontuarioService.criarProntuario(eq(1L), any(ProntuarioRequestDTO.class)))
+                when(prontuarioService.criarProntuario(eq(1L), any(ConsultaRequestDTO.class)))
                                 .thenReturn(prontuarioVO);
                 // Simula o assembler convertendo o VO.
                 when(assembler.toModel(prontuarioVO)).thenReturn(prontuarioModel);
@@ -75,7 +75,7 @@ class ProntuarioControllerTest {
         @DisplayName("Deve retornar status 403 Forbidden ao tentar criar prontuário com usuário não-médico")
         void criarProntuario_quandoUsuarioNaoEhMedico() throws Exception {
                 // Simula o serviço lançando uma exceção de permissão.
-                when(prontuarioService.criarProntuario(eq(2L), any(ProntuarioRequestDTO.class)))
+                when(prontuarioService.criarProntuario(eq(2L), any(ConsultaRequestDTO.class)))
                                 .thenThrow(new IllegalArgumentException("Apenas médicos podem criar prontuários."));
 
                 // Executa a requisição e espera o status 403.
@@ -89,7 +89,7 @@ class ProntuarioControllerTest {
         @DisplayName("Deve buscar um prontuário e retornar status 200 OK")
         void buscarProntuario_comSucesso() throws Exception {
                 // Prepara o modelo HATEOAS esperado.
-                EntityModel<ProntuarioVO> prontuarioModel = EntityModel.of(prontuarioVO);
+                EntityModel<ConsultaVO> prontuarioModel = EntityModel.of(prontuarioVO);
                 // Simula o serviço e o assembler.
                 when(prontuarioService.buscarProntuario(1L, 10L)).thenReturn(prontuarioVO);
                 when(assembler.toModel(prontuarioVO)).thenReturn(prontuarioModel);

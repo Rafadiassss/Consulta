@@ -12,7 +12,7 @@ public class Paciente extends Usuario {
     private String cpf;
 
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Consulta> consultas;
+    private List<Prontuario> prontuarios;
     @Column(name = "cartao_sus")
     private String cartaoSus;
 
@@ -34,17 +34,17 @@ public class Paciente extends Usuario {
         this.cpf = cpf;
     }
 
-    public List<Consulta> getConsultas() {
-        return consultas;
+    public List<Prontuario> getConsultas() {
+        return prontuarios;
     }
 
-    public void setConsultas(List<Consulta> consultas) {
-        this.consultas = consultas;
+    public void setConsultas(List<Prontuario> prontuarios) {
+        this.prontuarios = prontuarios;
     }
 
     // Método para listar consultas
-    public List<Consulta> listarConsultas() {
-        return consultas;
+    public List<Prontuario> listarConsultas() {
+        return prontuarios;
     }
 
     public String getCartaoSus() {

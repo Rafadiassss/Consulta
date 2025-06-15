@@ -10,5 +10,6 @@ public record ExameRequestDTO(
         @NotBlank(message = "O nome do exame não pode ser vazio") String nome,
         String resultado,
         String observacoes,
-        @NotNull(message = "O ID da consulta é obrigatório") Long consultaId) {
+        @NotNull(message = "O ID da consulta é obrigatório") Long prontuarioId) {
+
 }

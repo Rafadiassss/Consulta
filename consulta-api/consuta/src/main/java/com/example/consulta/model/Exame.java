@@ -15,17 +15,17 @@ public class Exame {
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "consulta_id")
-    private Consulta consulta;
+    private Prontuario Prontuario;
 
     // Construtores
     public Exame() {
     }
 
-    public Exame(String nome, String resultado, String observacoes, Consulta consulta) {
+    public Exame(String nome, String resultado, String observacoes, Prontuario Prontuario) {
         this.nome = nome;
         this.resultado = resultado;
         this.observacoes = observacoes;
-        this.consulta = consulta;
+        this.Prontuario = Prontuario;
     }
 
     // Getters e Setters
@@ -57,11 +57,11 @@ public class Exame {
         this.observacoes = observacoes;
     }
 
-    public Consulta getConsulta() {
-        return consulta;
+    public Prontuario getConsulta() {
+        return Prontuario;
     }
 
-    public void setConsulta(Consulta consulta) {
-        this.consulta = consulta;
+    public void setConsulta(Prontuario consulta) {
+        this.Prontuario = consulta;
     }
 }

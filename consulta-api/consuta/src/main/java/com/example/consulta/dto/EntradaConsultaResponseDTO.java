@@ -1,9 +1,9 @@
-package com.example.consulta.vo;
+package com.example.consulta.dto;
 
 import java.time.LocalDateTime;
 
-// Objeto de negócio que representa uma entrada no histórico.
-public record EntradaProntuarioVO(
+// DTO para a resposta da API de uma entrada do prontuário.
+public record EntradaConsultaResponseDTO(
         Long id,
         LocalDateTime dataEntrada,
         String diagnostico,

@@ -1,16 +1,11 @@
 package com.example.consulta.dto;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
-// DTO para enviar a resposta da API.
-// Usa os DTOs (MedicoDTO e PacienteDTO) para as entidades relacionadas.
+// DTO para a resposta da API, mostrando o Prontuário e seu histórico.
 public record ConsultaResponseDTO(
         Long id,
-        LocalDateTime data,
-        String status,
-        String nomeConsulta,
-        PacienteDTO paciente,
-        MedicoDTO medico,
-        Long pagamentoId // Enviando apenas o ID do pagamento associado
+        String numero,
+        List<EntradaConsultaResponseDTO> entradas // Usa o DTO de resposta da Entrada
 ) {
 }

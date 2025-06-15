@@ -8,5 +8,5 @@ public record ExameResponseDTO(
         String nome,
         String resultado,
         String observacoes,
-        Long consultaId) {
+        Long prontuarioId) {
 }

@@ -1,91 +1,11 @@
-// package com.example.consulta.model;
-
-// import jakarta.persistence.*;
-// import com.fasterxml.jackson.annotation.JsonIgnore;
-
-// @Entity
-// public class Prontuario {
-
-//     @Id
-//     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//     private Long id;
-
-//     private String numero;
-//     private String diagnostico;
-//     private String tratamento;
-//     private String observacoes;
-
-//     @OneToOne(mappedBy = "prontuario")
-//     @JsonIgnore
-//     private Consulta consulta; // Relacionamento bidirecional
-
-//     // Construtor padrão
-//     public Prontuario() {
-//     }
-
-//     // Construtor completo
-//     public Prontuario(String numero, String diagnostico, String tratamento, String observacoes) {
-//         this.numero = numero;
-//         this.diagnostico = diagnostico;
-//         this.tratamento = tratamento;
-//         this.observacoes = observacoes;
-//     }
-
-//     // Getters e Setters
-//     public Long getId() {
-//         return id;
-//     }
-
-//     public void setId(Long id) {
-//         this.id = id;
-//     }
-
-//     public String getNumero() {
-//         return numero;
-//     }
-
-//     public void setNumero(String numero) {
-//         this.numero = numero;
-//     }
-
-//     public String getDiagnostico() {
-//         return diagnostico;
-//     }
-
-//     public void setDiagnostico(String diagnostico) {
-//         this.diagnostico = diagnostico;
-//     }
-
-//     public String getTratamento() {
-//         return tratamento;
-//     }
-
-//     public void setTratamento(String tratamento) {
-//         this.tratamento = tratamento;
-//     }
-
-//     public String getObservacoes() {
-//         return observacoes;
-//     }
-
-//     public void setObservacoes(String observacoes) {
-//         this.observacoes = observacoes;
-//     }
-
-//     public Consulta getConsulta() {
-//         return consulta;
-//     }
-
-//     public void setConsulta(Consulta consulta) {
-//         this.consulta = consulta;
-//     }
-// }
-
 package com.example.consulta.model;
 
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 public class Prontuario {
@@ -94,39 +14,110 @@ public class Prontuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String numero;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime data;
 
-    // E substituídos por uma lista de entradas
-    @OneToMany(mappedBy = "prontuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EntradaProntuario> entradas = new ArrayList<>();
+    private String status;
 
-    // Método auxiliar para adicionar uma nova entrada de forma segura
-    public void adicionarEntrada(EntradaProntuario entrada) {
-        entradas.add(entrada);
-        entrada.setProntuario(this);
+    @ManyToOne
+    @JoinColumn(name = "paciente_id")
+    @JsonIgnoreProperties("consultas")
+    private Paciente paciente;
+
+    @ManyToOne
+    @JoinColumn(name = "medico_id")
+    @JsonIgnoreProperties("consultas")
+    private Medico medico;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "pagamento_id")
+    private Pagamento pagamento;
+
+    @OneToOne(cascade = CascadeType.PERSIST) // Usando CascadeType.PERSIST para garantir persistência do prontuário
+    @JoinColumn(name = "consulta_id")
+    private Consulta consulta;
+
+    private String nomePontuario;
+
+    // Construtores
+    public Prontuario() {
     }
 
+    public Prontuario(String nomePontuario) {
+        this.nomePontuario = nomePontuario;
+    }
+
+    public Prontuario(LocalDateTime data, String status, Paciente paciente, Medico medico) {
+        this.data = data;
+        this.status = status;
+        this.paciente = paciente;
+        this.medico = medico;
+    }
+
+    // Getters e Setters
     public Long getId() {
         return id;
+    }
+
+    public LocalDateTime getData() {
+        return data;
+    }
+
+    public void setData(LocalDateTime data) {
+        this.data = data;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Paciente getPaciente() {
+        return paciente;
+    }
+
+    public void setPaciente(Paciente paciente) {
+        this.paciente = paciente;
+    }
+
+    public Medico getMedico() {
+        return medico;
+    }
+
+    public void setMedico(Medico medico) {
+        this.medico = medico;
+    }
+
+    public Consulta getProntuario() {
+        return consulta;
+    }
+
+    public void setProntuario(Consulta consulta) {
+        this.consulta = consulta;
+        
+    }
+
+    public String getNomePontuario() {
+        return nomePontuario;
+    }
+
+    public void setNomeConsulta(String nomePontuario) {
+        this.nomePontuario = nomePontuario;
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
-    public String getNumero() {
-        return numero;
+    public Pagamento getPagamento() {
+        return pagamento;
     }
 
-    public void setNumero(String numero) {
-        this.numero = numero;
+    public void setPagamento(Pagamento pagamento) {
+        this.pagamento = pagamento;
     }
 
-    public List<EntradaProntuario> getEntradas() {
-        return entradas;
-    }
-
-    public void setEntradas(List<EntradaProntuario> entradas) {
-        this.entradas = entradas;
-    }
 }

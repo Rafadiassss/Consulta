@@ -1,162 +1,104 @@
 package com.example.consulta.service;
 
+import com.example.consulta.dto.EntradaConsultaRequestDTO;
+import com.example.consulta.dto.ConsultaRequestDTO;
+import com.example.consulta.enums.TipoUsuario;
+import com.example.consulta.model.EntradaConsulta;
+import com.example.consulta.model.Consulta;
+import com.example.consulta.model.Usuario;
+import com.example.consulta.repository.ConsultaRepository;
+import com.example.consulta.repository.UsuarioRepository;
+import com.example.consulta.vo.EntradaConsultaVO;
+import com.example.consulta.vo.ConsultaVO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.example.consulta.dto.ConsultaRequestDTO;
-import com.example.consulta.model.Consulta;
-import com.example.consulta.model.Medico;
-import com.example.consulta.model.Paciente;
-import com.example.consulta.model.Pagamento;
-import com.example.consulta.model.Prontuario;
-import com.example.consulta.repository.ConsultaRepository;
-import com.example.consulta.repository.MedicoRepository;
-import com.example.consulta.repository.PacienteRepository;
-import com.example.consulta.repository.PagamentoRepository;
-import com.example.consulta.repository.ProntuarioRepository;
-import com.example.consulta.vo.ConsultaVO;
-
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class ConsultaService {
 
     @Autowired
-    private PagamentoRepository pagamentoRepository;
-
+    private ConsultaRepository ConsultaRepository;
     @Autowired
-    private ProntuarioRepository prontuarioRepository;
+    private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private MedicoRepository medicoRepository;
+    public ConsultaVO criarConsulta(Long idUsuario, ConsultaRequestDTO dto) {
+        // Busca o usuário. Se não encontrar, lança uma exceção padrão.
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuário (médico) não encontrado."));
 
-    @Autowired
-    private PacienteRepository pacienteRepository;
+        // Valida a permissão. Se não for médico lança IllegalArgumentException.
+        if (usuario.getTipo() != TipoUsuario.MEDICO) {
+            throw new IllegalArgumentException("Apenas médicos podem criar Consulta.");
+        }
 
-    @Autowired
-    private ConsultaRepository consultaRepository;
+        Consulta consulta = new Consulta();
+        consulta.setNumero(dto.numero());
+        Consulta Consultasalvo = ConsultaRepository.save(consulta);
 
-    // Lista todas as consultas com cache
-    @Cacheable(value = "consultas")
-    public List<ConsultaVO> listarTodas() {
-        return consultaRepository.findAll()
+        return toVO(Consultasalvo);
+    }
+
+    public ConsultaVO buscarConsultaVO(Long idUsuario, Long idcConsulta) {
+        // Valida o usuário.
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+        if (usuario.getTipo() != TipoUsuario.MEDICO) {
+            throw new IllegalArgumentException("Apenas médicos podem visualizar Consulta.");
+        }
+
+        // Busca o prontuário.
+        Consulta consulta = ConsultaRepository.findById(idcConsulta)
+                .orElseThrow(() -> new RuntimeException("Consulta não encontrado."));
+
+        return toVO(consulta);
+    }
+
+    public ConsultaVO adicionarEntrada(Long idConsulta, EntradaConsultaRequestDTO dto) {
+        Consulta consulta = ConsultaRepository.findById(idConsulta)
+                .orElseThrow(() -> new RuntimeException("Consulta principal não encontrado."));
+
+        EntradaConsulta novaEntrada = toEntradaEntity(dto);
+        novaEntrada.setDataEntrada(LocalDateTime.now());
+
+        consulta.adicionarEntrada(novaEntrada);
+
+        Consulta consultaAtualizado = ConsultaRepository.save(consulta);
+
+        return toVO(consultaAtualizado);
+    }
+
+    // --- MÉTODOS DE MAPEAMENTO ---
+
+    private ConsultaVO toVO(Consulta consulta) {
+        List<EntradaConsultaVO> entradasVO = consulta.getEntradas().stream()
+                .map(this::toEntradaVO).collect(Collectors.toList());
+        return new ConsultaVO(consulta.getId(), consulta.getNumero(), entradasVO);
+    }
+
+    private EntradaConsultaVO toEntradaVO(EntradaConsulta entrada) {
+        return new EntradaConsultaVO(entrada.getId(), entrada.getDataEntrada(), entrada.getDiagnostico(),
+                entrada.getTratamento(), entrada.getObservacoes());
+    }
+
+    private EntradaConsulta toEntradaEntity(EntradaConsultaRequestDTO dto) {
+        EntradaConsulta entrada = new EntradaConsulta();
+        entrada.setDiagnostico(dto.diagnostico());
+        entrada.setTratamento(dto.tratamento());
+        entrada.setObservacoes(dto.observacoes());
+        return entrada;
+    }
+
+    @Cacheable("Consulta") // Ainda é uma boa ideia manter o cache aqui
+    public List<ConsultaVO> listarTodosSemValidacao() {
+        System.out.println("Buscando TODOS os Consulta no banco (requisição de desenvolvimento)...");
+        return ConsultaRepository.findAll()
                 .stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
-    }
-
-    // Busca consulta por id com cache
-    @Cacheable(value = "consulta", key = "#id")
-    public Optional<ConsultaVO> buscarPorId(Long id) {
-        return consultaRepository.findById(id).map(this::toVO);
-    }
-
-    // Deleta consulta e limpa caches relacionados
-    @CacheEvict(value = { "consultas", "consulta", "prontuario" }, allEntries = true)
-    @Transactional
-    public boolean deletar(Long id) {
-        if (consultaRepository.existsById(id)) {
-            consultaRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    // Salva nova consulta com validação e relacionamento correto
-    @CacheEvict(value = "consultas", allEntries = true)
-    @Transactional
-    public ConsultaVO salvar(ConsultaRequestDTO dto) {
-        Paciente paciente = pacienteRepository.findById(dto.pacienteId())
-                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
-
-        Medico medico = medicoRepository.findById(dto.medicoId())
-                .orElseThrow(() -> new RuntimeException("Médico não encontrado"));
-
-        Consulta consulta = toEntity(dto, paciente, medico);
-
-        Consulta consultaSalva = consultaRepository.save(consulta);
-        return toVO(consultaSalva);
-    }
-
-    // Atualiza consulta, incluindo pagamento e prontuario, e atualiza cache
-    @CacheEvict(value = "consultas", allEntries = true)
-    @CachePut(value = "consulta", key = "#id")
-    @Transactional
-    public Optional<ConsultaVO> atualizar(Long id, ConsultaRequestDTO dto) {
-        return consultaRepository.findById(id)
-                .map(consultaExistente -> {
-                    Paciente paciente = pacienteRepository.findById(dto.pacienteId())
-                            .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
-                    Medico medico = medicoRepository.findById(dto.medicoId())
-                            .orElseThrow(() -> new RuntimeException("Médico não encontrado"));
-
-                    consultaExistente.setData(dto.data());
-                    consultaExistente.setStatus(dto.status());
-                    consultaExistente.setNomeConsulta(dto.nomeConsulta());
-                    consultaExistente.setPaciente(paciente);
-                    consultaExistente.setMedico(medico);
-
-                    if (dto.pagamentoId() != null) {
-                        Pagamento pagamento = pagamentoRepository.findById(dto.pagamentoId())
-                                .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
-                        consultaExistente.setPagamento(pagamento);
-                    } else {
-                        consultaExistente.setPagamento(null);
-                    }
-
-                    if (dto.prontuarioId() != null) {
-                        Prontuario prontuario = prontuarioRepository.findById(dto.prontuarioId())
-                                .orElseThrow(() -> new RuntimeException("Prontuário não encontrado"));
-                        consultaExistente.setProntuario(prontuario);
-                    } else {
-                        consultaExistente.setProntuario(null);
-                    }
-
-                    Consulta consultaAtualizada = consultaRepository.save(consultaExistente);
-                    return toVO(consultaAtualizada);
-                });
-    }
-
-    // Converte Consulta para ConsultaVO
-    private ConsultaVO toVO(Consulta consulta) {
-        return new ConsultaVO(
-                consulta.getId(),
-                consulta.getData(),
-                consulta.getStatus(),
-                consulta.getNomeConsulta(),
-                consulta.getPaciente(),
-                consulta.getMedico(),
-                consulta.getPagamento(),
-                consulta.getProntuario());
-    }
-
-    // Converte ConsultaRequestDTO para Consulta, relacionando entidades
-    private Consulta toEntity(ConsultaRequestDTO dto, Paciente paciente, Medico medico) {
-        Consulta consulta = new Consulta();
-        consulta.setData(dto.data());
-        consulta.setStatus(dto.status());
-        consulta.setNomeConsulta(dto.nomeConsulta());
-        consulta.setPaciente(paciente);
-        consulta.setMedico(medico);
-
-        if (dto.pagamentoId() != null) {
-            Pagamento pagamento = pagamentoRepository.findById(dto.pagamentoId())
-                    .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
-            consulta.setPagamento(pagamento);
-        }
-
-        if (dto.prontuarioId() != null) {
-            Prontuario prontuario = prontuarioRepository.findById(dto.prontuarioId())
-                    .orElseThrow(() -> new RuntimeException("Prontuário não encontrado"));
-            consulta.setProntuario(prontuario);
-        }
-
-        return consulta;
     }
 }

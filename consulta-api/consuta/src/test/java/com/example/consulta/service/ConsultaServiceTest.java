@@ -1,9 +1,9 @@
 package com.example.consulta.service;
 
-import com.example.consulta.dto.ConsultaRequestDTO;
+import com.example.consulta.dto.ProntuarioRequestDTO;
 import com.example.consulta.model.*;
 import com.example.consulta.repository.*;
-import com.example.consulta.vo.ConsultaVO;
+import com.example.consulta.vo.ProntuarioVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,23 +28,23 @@ import static org.mockito.Mockito.*;
 class ConsultaServiceTest {
 
     @Mock
-    private ConsultaRepository consultaRepository;
+    private Prontuario prontuario;
     @Mock
     private PacienteRepository pacienteRepository;
     @Mock
     private MedicoRepository medicoRepository;
     @Mock
-    private ProntuarioRepository prontuarioRepository;
+    private ConsultaRepository consultaRepository;
     @Mock
     private PagamentoRepository pagamentoRepository;
 
     @InjectMocks
-    private ConsultaService consultaService;
+    private ProntuarioService prontuarioService;
 
     private Paciente paciente;
     private Medico medico;
-    private Consulta consulta;
-    private ConsultaRequestDTO consultaRequestDTO;
+    private Prontuario consulta;
+    private ProntuarioRequestDTO consultaRequestDTO;
 
     @BeforeEach
     void setUp() {
@@ -54,10 +54,10 @@ class ConsultaServiceTest {
         medico = new Medico();
         medico.setId(2L);
 
-        consulta = new Consulta(LocalDateTime.now().plusDays(1), "AGENDADA", paciente, medico);
+        consulta = new Prontuario(LocalDateTime.now().plusDays(1), "AGENDADA", paciente, medico);
         consulta.setId(1L);
 
-        consultaRequestDTO = new ConsultaRequestDTO(
+        consultaRequestDTO = new ProntuarioRequestDTO(
                 LocalDateTime.now().plusDays(1), "AGENDADA", "Consulta de Rotina",
                 paciente.getId(), medico.getId(), null, null);
     }
@@ -66,7 +66,7 @@ class ConsultaServiceTest {
     @DisplayName("Deve listar todas as consultas")
     void listarTodas() {
         when(consultaRepository.findAll()).thenReturn(Collections.singletonList(consulta));
-        List<ConsultaVO> resultado = consultaService.listarTodas();
+        List<ProntuarioVO> resultado = prontuarioService.listarTodas();
         assertThat(resultado).isNotNull().hasSize(1);
     }
 
@@ -77,15 +77,15 @@ class ConsultaServiceTest {
         when(pacienteRepository.findById(1L)).thenReturn(Optional.of(paciente));
         when(medicoRepository.findById(2L)).thenReturn(Optional.of(medico));
         // Simula a ação de salvar.
-        when(consultaRepository.save(any(Consulta.class))).thenReturn(consulta);
+        when(consultaRepository.save(any(Prontuario.class))).thenReturn(consulta);
 
         // Chama o método de salvar do serviço.
-        ConsultaVO resultado = consultaService.salvar(consultaRequestDTO);
+        ProntuarioVO resultado = consultaService.salvar(consultaRequestDTO);
 
         // Verifica o resultado.
         assertThat(resultado).isNotNull();
         assertThat(resultado.paciente().getId()).isEqualTo(1L);
-        verify(consultaRepository).save(any(Consulta.class));
+        verify(consultaRepository).save(any(Prontuario.class));
     }
 
     @Test
@@ -100,7 +100,7 @@ class ConsultaServiceTest {
         });
 
         // Garante que o 'save' nunca foi chamado.
-        verify(consultaRepository, never()).save(any(Consulta.class));
+        verify(consultaRepository, never()).save(any(Prontuario.class));
     }
 
     @Test
@@ -111,10 +111,10 @@ class ConsultaServiceTest {
         when(pacienteRepository.findById(anyLong())).thenReturn(Optional.of(paciente));
         when(medicoRepository.findById(anyLong())).thenReturn(Optional.of(medico));
         // Simula a ação de salvar com os dados atualizados.
-        when(consultaRepository.save(any(Consulta.class))).thenReturn(consulta);
+        when(consultaRepository.save(any(Prontuario.class))).thenReturn(consulta);
 
         // Chama o serviço de atualização.
-        Optional<ConsultaVO> resultado = consultaService.atualizar(1L, consultaRequestDTO);
+        Optional<ProntuarioVO> resultado = consultaService.atualizar(1L, consultaRequestDTO);
 
         // Verifica se a consulta foi atualizada.
         assertThat(resultado).isPresent();
@@ -127,11 +127,11 @@ class ConsultaServiceTest {
         when(consultaRepository.findById(99L)).thenReturn(Optional.empty());
 
         // Chama o serviço.
-        Optional<ConsultaVO> resultado = consultaService.atualizar(99L, consultaRequestDTO);
+        Optional<ProntuarioVO> resultado = consultaService.atualizar(99L, consultaRequestDTO);
 
         // Verifica o resultado.
         assertThat(resultado).isEmpty();
-        verify(consultaRepository, never()).save(any(Consulta.class));
+        verify(consultaRepository, never()).save(any(Prontuario.class));
     }
 
     @Test

@@ -1,9 +1,9 @@
 package com.example.consulta.service;
 
 import com.example.consulta.dto.ExameRequestDTO;
-import com.example.consulta.model.Consulta;
+import com.example.consulta.model.Prontuario;
 import com.example.consulta.model.Exame;
-import com.example.consulta.repository.ConsultaRepository;
+import com.example.consulta.repository.ProntuarioRepository;
 import com.example.consulta.repository.ExameRepository;
 import com.example.consulta.vo.ExameVO;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,19 +32,19 @@ class ExameServiceTest {
     @Mock
     private ExameRepository exameRepository;
     @Mock
-    private ConsultaRepository consultaRepository;
+    private Prontuario consultaRepository;
 
     @InjectMocks
     private ExameService exameService;
 
     private Exame exame;
-    private Consulta consulta;
+    private Prontuario consulta;
     private ExameRequestDTO exameRequestDTO;
 
     @BeforeEach
     void setUp() {
         // Prepara uma consulta de base.
-        consulta = new Consulta();
+        consulta = new Prontuario();
         consulta.setId(10L);
 
         // Prepara um exame de base, já associado à consulta.

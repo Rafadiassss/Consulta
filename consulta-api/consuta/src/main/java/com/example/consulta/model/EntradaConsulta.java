@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-public class EntradaProntuario {
+public class EntradaConsulta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,9 +23,9 @@ public class EntradaProntuario {
     private String observacoes;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prontuario_id")
+    @JoinColumn(name = "consulta_id")
     @JsonIgnore // Evita loops infinitos na serialização JSON
-    private Prontuario prontuario;
+    private Consulta consulta;
 
     // Getters e Setters
 
@@ -69,11 +69,12 @@ public class EntradaProntuario {
         this.observacoes = observacoes;
     }
 
-    public Prontuario getProntuario() {
-        return prontuario;
+    public Consulta getConsulta() {
+        return consulta;
     }
 
-    public void setProntuario(Prontuario prontuario) {
-        this.prontuario = prontuario;
+    public void setConsulta(Consulta consulta) {
+        this.consulta = consulta;
     }
+
 }

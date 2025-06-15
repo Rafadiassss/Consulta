@@ -1,120 +1,100 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.dto.EntradaProntuarioRequestDTO;
 import com.example.consulta.dto.ProntuarioRequestDTO;
-import com.example.consulta.hateoas.ProntuarioModelAssembler;
+import com.example.consulta.hateoas.ProntuarioModelAssembler; // Importa o Assembler
 import com.example.consulta.service.ProntuarioService;
 import com.example.consulta.vo.ProntuarioVO;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.hateoas.CollectionModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-@RequestMapping("/prontuarios")
-@Tag(name = "Prontuarios", description = "Operações para gerenciar os prontuarios")
+@RequestMapping("/prontuario")
+@Tag(name = "prontuario", description = "Operações para gerenciar as prontuario")
 public class ProntuarioController {
 
-    private final ProntuarioService prontuarioService;
-    private final ProntuarioModelAssembler assembler;
+    @Autowired
+    private ProntuarioService prontuarioService;
 
-    // Usando injeção via construtor, que é a melhor prática.
-    public ProntuarioController(ProntuarioService prontuarioService, ProntuarioModelAssembler assembler) {
-        this.prontuarioService = prontuarioService;
-        this.assembler = assembler;
-    }
+    // Injeta o assembler.
+    @Autowired
+    private ProntuarioModelAssembler assembler;
 
-    // Este método vai retornar uma resposta HTTP, mas o tipo do objeto no corpo
-    // pode variar. Pode ser um modelo de sucesso, uma String de erro, ou até mesmo
-    // vazio por isso usar o '?'.
-    @PostMapping("/{idUsuario}")
-    public ResponseEntity<?> criarProntuario(
-            @PathVariable Long idUsuario,
-            @RequestBody @Valid ProntuarioRequestDTO dto) throws IllegalArgumentException {
-
-        try {
-            // Chama o serviço para criar o prontuário.
-            ProntuarioVO prontuarioVO = prontuarioService.criarProntuario(idUsuario, dto);
-            // Usa o assembler para converter o VO em um modelo HATEOAS.
-            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioVO);
-            // Retorna 201 Created com o modelo no corpo.
-            return ResponseEntity.status(HttpStatus.CREATED).body(prontuarioModel);
-        } catch (IllegalArgumentException e) {
-            // Se o usuário não for médico, retorna 403 Forbidden.
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (RuntimeException e) { // Captura o "Usuário não encontrado"
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
-
-    @GetMapping("/{idUsuario}/{idProntuario}")
-    public ResponseEntity<EntityModel<ProntuarioVO>> buscarProntuario(
-            @PathVariable Long idUsuario,
-            @PathVariable Long idProntuario) throws IllegalArgumentException {
-        try {
-            // Busca o VO do prontuário no serviço.
-            ProntuarioVO prontuarioVO = prontuarioService.buscarProntuario(idUsuario, idProntuario);
-            // Converte para o modelo HATEOAS.
-            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioVO);
-
-            // Adiciona o link "self" dinâmico aqui no controller, onde temos todo o
-            // contexto.
-            prontuarioModel.add(
-                    linkTo(methodOn(ProntuarioController.class)
-                            .buscarProntuario(idUsuario, idProntuario)).withSelfRel());
-
-            // Retorna 200 OK com o modelo HATEOAS completo.
-            return ResponseEntity.ok(prontuarioModel);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
-
-    @PostMapping("/{idProntuario}/entradas")
-    public ResponseEntity<EntityModel<ProntuarioVO>> adicionarNovaEntrada(
-            @PathVariable Long idProntuario,
-            @RequestBody @Valid EntradaProntuarioRequestDTO dto) {
-        try {
-            // Adiciona a nova entrada e obtém o prontuário atualizado.
-            ProntuarioVO prontuarioAtualizadoVO = prontuarioService.adicionarEntrada(idProntuario, dto);
-            // Converte para o modelo HATEOAS.
-            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioAtualizadoVO);
-            // Retorna 200 OK com o prontuário completo.
-            return ResponseEntity.ok(prontuarioModel);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
-
-    // Endpoint aberto para listar todos os prontuários para fins de desenvolvimento
-    // e teste.
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<ProntuarioVO>>> listarTodos() {
-        // Chama o novo método do serviço que não possui validação de usuário.
-        List<ProntuarioVO> prontuariosVO = prontuarioService.listarTodosSemValidacao();
-
-        // Converte cada VO em um modelo HATEOAS.
-        List<EntityModel<ProntuarioVO>> prontuariosModel = prontuariosVO.stream()
+    public ResponseEntity<CollectionModel<EntityModel<ProntuarioVO>>> listarTodas() {
+        // Busca a lista de VOs do serviço.
+        List<ProntuarioVO> ProntuarioVO = prontuarioService.listarTodos();
+        // Converte cada VO em um EntityModel usando o assembler.
+        List<EntityModel<ProntuarioVO>> prontuarioModel = ProntuarioVO.stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
-
-        // Cria a coleção de resposta HATEOAS com um link para si mesma.
-        CollectionModel<EntityModel<ProntuarioVO>> collectionModel = CollectionModel.of(prontuariosModel,
-                linkTo(methodOn(ProntuarioController.class).listarTodos()).withSelfRel());
-
-        // Retorna 200 OK com a lista completa.
+        // Cria um CollectionModel com os resultados e um link para a própria coleção.
+        CollectionModel<EntityModel<ProntuarioVO>> collectionModel = CollectionModel.of(prontuarioModel,
+                linkTo(methodOn(ProntuarioController.class).listarTodas()).withSelfRel());
+        // Retorna 200 OK com a coleção HATEOAS.
         return ResponseEntity.ok(collectionModel);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EntityModel<ProntuarioVO>> buscarPorId(@PathVariable Long id) {
+        // Busca o VO do serviço.
+        return prontuarioService.buscarPorId(id)
+                // Se encontrado converte para EntityModel com links.
+                .map(assembler::toModel)
+                // Envolve em uma resposta 200 OK.
+                .map(ResponseEntity::ok)
+                // Se não encontrado retorna 404 Not Found.
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<?> salvar(@RequestBody @Valid ProntuarioRequestDTO dto) {
+        try {
+            // Envia o DTO para o serviço e recebe o VO salvo.
+            ProntuarioVO prontuarioSalvaVO = prontuarioService.salvar(dto);
+            // Converte o VO para um EntityModel.
+            EntityModel<ProntuarioVO> prontuarioModel = assembler.toModel(prontuarioSalvaVO);
+            // Retorna 201 Created com a URI do novo recurso e o modelo no corpo.
+            return ResponseEntity
+                    .created(prontuarioModel.getRequiredLink("self").toUri())
+                    .body(prontuarioModel);
+        } catch (RuntimeException e) {
+            // Caminho de erro: traduz a exceção para uma resposta HTTP 404 Not Found.
+            // Isso funciona para "Paciente não encontrado", "Médico não encontrado"
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EntityModel<ProntuarioVO>> atualizar(@PathVariable Long id,
+            @RequestBody @Valid ProntuarioRequestDTO dto) {
+        // Chama o serviço de atualização.
+        return prontuarioService.atualizar(id, dto)
+                .map(assembler::toModel)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Dentro de ConsultaController.java
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        if (prontuarioService.deletar(id)) {
+            return ResponseEntity.noContent().build(); // 204 No Content
+        } else {
+            return ResponseEntity.notFound().build(); // 404 Not Found
+        }
     }
 }

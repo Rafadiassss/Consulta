@@ -1,21 +1,27 @@
 package com.example.consulta.service;
 
-import com.example.consulta.dto.EntradaProntuarioRequestDTO;
 import com.example.consulta.dto.ProntuarioRequestDTO;
-import com.example.consulta.enums.TipoUsuario;
-import com.example.consulta.model.EntradaProntuario;
+import com.example.consulta.model.Medico;
+import com.example.consulta.model.Paciente;
+import com.example.consulta.model.Pagamento;
+import com.example.consulta.model.Consulta;
 import com.example.consulta.model.Prontuario;
-import com.example.consulta.model.Usuario;
+import com.example.consulta.repository.MedicoRepository;
+import com.example.consulta.repository.PacienteRepository;
+import com.example.consulta.repository.PagamentoRepository;
+import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.ProntuarioRepository;
-import com.example.consulta.repository.UsuarioRepository;
-import com.example.consulta.vo.EntradaProntuarioVO;
 import com.example.consulta.vo.ProntuarioVO;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,82 +29,129 @@ public class ProntuarioService {
 
     @Autowired
     private ProntuarioRepository prontuarioRepository;
+
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private PacienteRepository pacienteRepository;
 
-    public ProntuarioVO criarProntuario(Long idUsuario, ProntuarioRequestDTO dto) {
-        // Busca o usuário. Se não encontrar, lança uma exceção padrão.
-        Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuário (médico) não encontrado."));
+    @Autowired
+    private MedicoRepository medicoRepository;
 
-        // Valida a permissão. Se não for médico lança IllegalArgumentException.
-        if (usuario.getTipo() != TipoUsuario.MEDICO) {
-            throw new IllegalArgumentException("Apenas médicos podem criar prontuários.");
-        }
+    @Autowired
+    private PagamentoRepository pagamentoRepository;
 
-        Prontuario prontuario = new Prontuario();
-        prontuario.setNumero(dto.numero());
-        Prontuario prontuarioSalvo = prontuarioRepository.save(prontuario);
+    @Autowired
+    private ConsultaRepository consultaRepository;
 
-        return toVO(prontuarioSalvo);
-    }
-
-    public ProntuarioVO buscarProntuario(Long idUsuario, Long idProntuario) {
-        // Valida o usuário.
-        Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
-        if (usuario.getTipo() != TipoUsuario.MEDICO) {
-            throw new IllegalArgumentException("Apenas médicos podem visualizar prontuários.");
-        }
-
-        // Busca o prontuário.
-        Prontuario prontuario = prontuarioRepository.findById(idProntuario)
-                .orElseThrow(() -> new RuntimeException("Prontuário não encontrado."));
-
-        return toVO(prontuario);
-    }
-
-    public ProntuarioVO adicionarEntrada(Long idProntuario, EntradaProntuarioRequestDTO dto) {
-        Prontuario prontuario = prontuarioRepository.findById(idProntuario)
-                .orElseThrow(() -> new RuntimeException("Prontuário principal não encontrado."));
-
-        EntradaProntuario novaEntrada = toEntradaEntity(dto);
-        novaEntrada.setDataEntrada(LocalDateTime.now());
-
-        prontuario.adicionarEntrada(novaEntrada);
-
-        Prontuario prontuarioAtualizado = prontuarioRepository.save(prontuario);
-
-        return toVO(prontuarioAtualizado);
-    }
-
-    // --- MÉTODOS DE MAPEAMENTO ---
-
-    private ProntuarioVO toVO(Prontuario prontuario) {
-        List<EntradaProntuarioVO> entradasVO = prontuario.getEntradas().stream()
-                .map(this::toEntradaVO).collect(Collectors.toList());
-        return new ProntuarioVO(prontuario.getId(), prontuario.getNumero(), entradasVO);
-    }
-
-    private EntradaProntuarioVO toEntradaVO(EntradaProntuario entrada) {
-        return new EntradaProntuarioVO(entrada.getId(), entrada.getDataEntrada(), entrada.getDiagnostico(),
-                entrada.getTratamento(), entrada.getObservacoes());
-    }
-
-    private EntradaProntuario toEntradaEntity(EntradaProntuarioRequestDTO dto) {
-        EntradaProntuario entrada = new EntradaProntuario();
-        entrada.setDiagnostico(dto.diagnostico());
-        entrada.setTratamento(dto.tratamento());
-        entrada.setObservacoes(dto.observacoes());
-        return entrada;
-    }
-
-    @Cacheable("prontuarios") // Ainda é uma boa ideia manter o cache aqui
-    public List<ProntuarioVO> listarTodosSemValidacao() {
-        System.out.println("Buscando TODOS os prontuários no banco (requisição de desenvolvimento)...");
+    // Lista todos os prontuários
+    @Cacheable(value = "prontuarios")
+    public List<ProntuarioVO> listarTodos() {
         return prontuarioRepository.findAll()
                 .stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
+    }
+
+    // Busca por ID
+    @Cacheable(value = "prontuario", key = "#id")
+    public Optional<ProntuarioVO> buscarPorId(Long id) {
+        return prontuarioRepository.findById(id)
+                .map(this::toVO);
+    }
+
+    // Criar novo prontuário
+    @CacheEvict(value = "prontuarios", allEntries = true)
+    @Transactional
+    public ProntuarioVO salvar(ProntuarioRequestDTO dto) {
+        Paciente paciente = pacienteRepository.findById(dto.pacienteId())
+                .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+
+        Medico medico = medicoRepository.findById(dto.medicoId())
+                .orElseThrow(() -> new RuntimeException("Médico não encontrado"));
+
+        Prontuario prontuario = new Prontuario();
+        prontuario.setData(dto.data());
+        prontuario.setStatus(dto.status());
+        prontuario.setNomeConsulta(dto.nomeConsulta());
+        prontuario.setPaciente(paciente);
+        prontuario.setMedico(medico);
+
+        if (dto.pagamentoId() != null) {
+            Pagamento pagamento = pagamentoRepository.findById(dto.pagamentoId())
+                    .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
+            prontuario.setPagamento(pagamento);
+        }
+
+        if (dto.consultaId() != null) {
+            Consulta consulta = consultaRepository.findById(dto.consultaId())
+                    .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+            prontuario.setProntuario(consulta);
+        }
+
+        Prontuario salvo = prontuarioRepository.save(prontuario);
+        return toVO(salvo);
+    }
+
+    // Atualizar prontuário
+    @CacheEvict(value = "prontuarios", allEntries = true)
+    @CachePut(value = "prontuario", key = "#id")
+    @Transactional
+    public Optional<ProntuarioVO> atualizar(Long id, ProntuarioRequestDTO dto) {
+        return prontuarioRepository.findById(id)
+                .map(prontuarioExistente -> {
+                    Paciente paciente = pacienteRepository.findById(dto.pacienteId())
+                            .orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+                    Medico medico = medicoRepository.findById(dto.medicoId())
+                            .orElseThrow(() -> new RuntimeException("Médico não encontrado"));
+
+                    prontuarioExistente.setData(dto.data());
+                    prontuarioExistente.setStatus(dto.status());
+                    prontuarioExistente.setNomeConsulta(dto.nomeConsulta());
+                    prontuarioExistente.setPaciente(paciente);
+                    prontuarioExistente.setMedico(medico);
+
+                    if (dto.pagamentoId() != null) {
+                        Pagamento pagamento = pagamentoRepository.findById(dto.pagamentoId())
+                                .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
+                        prontuarioExistente.setPagamento(pagamento);
+                    } else {
+                        prontuarioExistente.setPagamento(null);
+                    }
+
+                    if (dto.consultaId() != null) {
+                        Consulta consulta = consultaRepository.findById(dto.consultaId())
+                                .orElseThrow(() -> new RuntimeException("Consulta não encontrada"));
+                        prontuarioExistente.setProntuario(consulta);
+                    } else {
+                        prontuarioExistente.setProntuario(null);
+                    }
+
+                    Prontuario atualizado = prontuarioRepository.save(prontuarioExistente);
+                    return toVO(atualizado);
+                });
+    }
+
+    // Deletar
+    @CacheEvict(value = { "prontuarios", "prontuario" }, allEntries = true)
+    @Transactional
+    public boolean deletar(Long id) {
+        if (prontuarioRepository.existsById(id)) {
+            prontuarioRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    // Conversor VO
+    private ProntuarioVO toVO(Prontuario p) {
+        return new ProntuarioVO(
+                p.getId(),
+                p.getData(),
+                p.getStatus(),
+                p.getNomePontuario(),
+                p.getPaciente(),
+                p.getMedico(),
+                p.getPagamento(),
+                p.getProntuario()
+        );
     }
 }

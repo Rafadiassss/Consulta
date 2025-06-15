@@ -19,7 +19,7 @@ public class Secretaria {
 
     @OneToMany
     @JoinColumn(name = "secretaria_id")
-    private List<Consulta> consultasGerenciadas;
+    private List<Prontuario> prontuariosGerenciadas;
 
     // Construtores
     public Secretaria() {
@@ -88,16 +88,16 @@ public class Secretaria {
         this.email = email;
     }
 
-    public List<Consulta> getConsultasGerenciadas() {
-        return consultasGerenciadas;
+    public List<Prontuario> getProntuariosGerenciadas() {
+        return prontuariosGerenciadas;
     }
 
-    public void setConsultasGerenciadas(List<Consulta> consultasGerenciadas) {
-        this.consultasGerenciadas = consultasGerenciadas;
+    public void setProntuariosGerenciadas(List<Prontuario> prontuariosGerenciadas) {
+        this.prontuariosGerenciadas = prontuariosGerenciadas;
     }
 
     // Método auxiliar para listar as consultas agendadas
-    public List<Consulta> listarConsultasGerenciadas() {
-        return consultasGerenciadas;
+    public List<Prontuario> listarProntuariosGerenciadas() {
+        return prontuariosGerenciadas;
     }
 }

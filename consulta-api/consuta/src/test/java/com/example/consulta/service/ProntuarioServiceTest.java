@@ -1,12 +1,12 @@
 package com.example.consulta.service;
 
-import com.example.consulta.dto.ProntuarioRequestDTO;
+import com.example.consulta.dto.ConsultaRequestDTO;
 import com.example.consulta.enums.TipoUsuario;
-import com.example.consulta.model.Prontuario;
+import com.example.consulta.model.Consulta;
 import com.example.consulta.model.Usuario;
-import com.example.consulta.repository.ProntuarioRepository;
+import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.UsuarioRepository;
-import com.example.consulta.vo.ProntuarioVO;
+import com.example.consulta.vo.ConsultaVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,17 +28,17 @@ import static org.mockito.Mockito.*;
 class ProntuarioServiceTest {
 
     @Mock
-    private ProntuarioRepository prontuarioRepository;
+    private ConsultaRepository prontuarioRepository;
     @Mock
     private UsuarioRepository usuarioRepository;
 
     @InjectMocks
-    private ProntuarioService prontuarioService;
+    private ConsultaService prontuarioService;
 
     private Usuario medico;
     private Usuario paciente;
-    private Prontuario prontuario;
-    private ProntuarioRequestDTO prontuarioRequestDTO;
+    private Consulta prontuario;
+    private ConsultaRequestDTO prontuarioRequestDTO;
 
     @BeforeEach
     void setUp() {
@@ -50,11 +50,11 @@ class ProntuarioServiceTest {
         paciente.setTipo(TipoUsuario.MEDICO);
         ReflectionTestUtils.setField(paciente, "id", 2L);
 
-        prontuario = new Prontuario();
+        prontuario = new Consulta();
         prontuario.setNumero("PRT-001");
         ReflectionTestUtils.setField(prontuario, "id", 10L);
 
-        prontuarioRequestDTO = new ProntuarioRequestDTO("PRT-002");
+        prontuarioRequestDTO = new ConsultaRequestDTO("PRT-002");
     }
 
     @Test
@@ -63,10 +63,10 @@ class ProntuarioServiceTest {
         // Simula o repositório encontrando o usuário médico.
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
         // Simula a ação de salvar o prontuário.
-        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario);
+        when(prontuarioRepository.save(any(Consulta.class))).thenReturn(prontuario);
 
         // Chama o método do serviço.
-        ProntuarioVO resultado = prontuarioService.criarProntuario(1L, prontuarioRequestDTO);
+        ConsultaVO resultado = prontuarioService.criarProntuario(1L, prontuarioRequestDTO);
 
         // Verifica o resultado.
         assertThat(resultado).isNotNull();
@@ -85,7 +85,7 @@ class ProntuarioServiceTest {
         });
 
         // Garante que o prontuário nunca foi salvo.
-        verify(prontuarioRepository, never()).save(any(Prontuario.class));
+        verify(prontuarioRepository, never()).save(any(Consulta.class));
     }
 
     @Test
@@ -96,7 +96,7 @@ class ProntuarioServiceTest {
         when(prontuarioRepository.findById(10L)).thenReturn(Optional.of(prontuario));
 
         // Chama o método de serviço.
-        ProntuarioVO resultado = prontuarioService.buscarProntuario(1L, 10L);
+        ConsultaVO resultado = prontuarioService.buscarProntuario(1L, 10L);
 
         // Verifica o resultado.
         assertThat(resultado).isNotNull();

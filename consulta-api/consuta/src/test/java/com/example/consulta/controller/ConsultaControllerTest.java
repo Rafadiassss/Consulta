@@ -1,9 +1,9 @@
 package com.example.consulta.controller;
 
-import com.example.consulta.dto.ConsultaRequestDTO;
-import com.example.consulta.hateoas.ConsultaModelAssembler;
-import com.example.consulta.service.ConsultaService;
-import com.example.consulta.vo.ConsultaVO;
+import com.example.consulta.dto.ProntuarioRequestDTO;
+import com.example.consulta.hateoas.ProntuarioModelAssembler;
+import com.example.consulta.service.ProntuarioService;
+import com.example.consulta.vo.PromtuarioVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ConsultaController.class)
+@WebMvcTest(ProntuarioController.class)
 @DisplayName("Testes do Controller de Consultas (API)")
 class ConsultaControllerTest {
 
@@ -42,29 +42,29 @@ class ConsultaControllerTest {
         private ObjectMapper objectMapper;
 
         @MockBean
-        private ConsultaService consultaService;
+        private ProntuarioService consultaService;
         @MockBean
-        private ConsultaModelAssembler assembler;
+        private ProntuarioModelAssembler assembler;
 
-        private ConsultaVO consultaVO;
-        private ConsultaRequestDTO consultaRequestDTO;
-        private EntityModel<ConsultaVO> consultaModel;
+        private PromtuarioVO consultaVO;
+        private ProntuarioRequestDTO consultaRequestDTO;
+        private EntityModel<PromtuarioVO> consultaModel;
 
         @BeforeEach
         void setUp() {
-                consultaVO = new ConsultaVO(1L, LocalDateTime.now(), "AGENDADA", "Rotina", null, null, null, null);
-                consultaRequestDTO = new ConsultaRequestDTO(LocalDateTime.now().plusDays(5), "AGENDADA", "Rotina", 1L,
+                consultaVO = new PromtuarioVO(1L, LocalDateTime.now(), "AGENDADA", "Rotina", null, null, null, null);
+                consultaRequestDTO = new ProntuarioRequestDTO(LocalDateTime.now().plusDays(5), "AGENDADA", "Rotina", 1L,
                                 1L, null,
                                 null);
                 consultaModel = EntityModel.of(consultaVO,
-                                linkTo(methodOn(ConsultaController.class).buscarPorId(1L)).withSelfRel());
+                                linkTo(methodOn(ProntuarioController.class).buscarPorId(1L)).withSelfRel());
         }
 
         @Test
         @DisplayName("Deve salvar uma nova consulta e retornar status 201 Created")
         void salvar() throws Exception {
                 // Mock do serviço para retornar consultaVO ao salvar
-                when(consultaService.salvar(any(ConsultaRequestDTO.class))).thenReturn(consultaVO);
+                when(consultaService.salvar(any(ProntuarioRequestDTO.class))).thenReturn(consultaVO);
 
                 // Mock do assembler para retornar modelo HATEOAS com links
                 when(assembler.toModel(consultaVO)).thenReturn(consultaModel);
@@ -86,7 +86,7 @@ class ConsultaControllerTest {
         void salvar_quandoDependenciaNaoEncontrada() throws Exception {
                 // Simula o serviço lançando uma exceção porque uma dependência não foi
                 // encontrada.
-                when(consultaService.salvar(any(ConsultaRequestDTO.class)))
+                when(consultaService.salvar(any(ProntuarioRequestDTO.class)))
                                 .thenThrow(new RuntimeException("Paciente não encontrado"));
 
                 // Executa a requisição POST e espera um erro 404.
@@ -100,7 +100,7 @@ class ConsultaControllerTest {
         @DisplayName("Deve retornar status 404 Not Found ao tentar atualizar consulta inexistente")
         void atualizar_quandoNaoEncontrado() throws Exception {
                 // Configura o mock do serviço para simular uma consulta não encontrada
-                when(consultaService.atualizar(eq(99L), any(ConsultaRequestDTO.class))).thenReturn(Optional.empty());
+                when(consultaService.atualizar(eq(99L), any(ProntuarioRequestDTO.class))).thenReturn(Optional.empty());
 
                 // Envia requisição PUT para atualizar consulta com ID 99
                 mockMvc.perform(put("/consultas/{id}", 99L)
@@ -147,11 +147,11 @@ class ConsultaControllerTest {
         @DisplayName("Deve listar todas as consultas e retornar status 200 OK")
         void listarTodas() throws Exception {
                 // Configuração do mock do serviço
-                List<ConsultaVO> consultas = List.of(consultaVO);
+                List<PromtuarioVO> consultas = List.of(consultaVO);
                 when(consultaService.listarTodas()).thenReturn(consultas);
 
                 // Mock do método toModel do assembler para qualquer ConsultaVO
-                when(assembler.toModel(any(ConsultaVO.class))).thenReturn(consultaModel);
+                when(assembler.toModel(any(PromtuarioVO.class))).thenReturn(consultaModel);
 
                 // Teste simplificado que verifica apenas o status
                 mockMvc.perform(get("/consultas"))
@@ -188,7 +188,7 @@ class ConsultaControllerTest {
         void atualizar_quandoEncontrado() throws Exception {
                 // Configura mock do serviço para retornar uma consulta quando atualizar for
                 // chamado
-                when(consultaService.atualizar(eq(1L), any(ConsultaRequestDTO.class)))
+                when(consultaService.atualizar(eq(1L), any(ProntuarioRequestDTO.class)))
                                 .thenReturn(Optional.of(consultaVO));
                 // Configura mock do assembler para converter a consulta em modelo HATEOAS
                 when(assembler.toModel(consultaVO)).thenReturn(consultaModel);
@@ -209,7 +209,7 @@ class ConsultaControllerTest {
         @DisplayName("Deve retornar status 400 Bad Request ao enviar dados inválidos")
         void salvar_quandoDadosInvalidos() throws Exception {
                 // Cria um objeto ConsultaRequestDTO com dados inválidos para teste
-                ConsultaRequestDTO requestInvalido = new ConsultaRequestDTO(
+                ProntuarioRequestDTO requestInvalido = new ProntuarioRequestDTO(
                                 null, "", "Rotina", null, null, null, null);
 
                 // Executa requisição POST para o endpoint /consultas com o objeto inválido
@@ -226,7 +226,7 @@ class ConsultaControllerTest {
         @DisplayName("Deve retornar o corpo da resposta correto ao salvar consulta")
         void salvar_verificarCorpoResposta() throws Exception {
                 // Mock do serviço para retornar uma consulta quando salvar for chamado
-                when(consultaService.salvar(any(ConsultaRequestDTO.class))).thenReturn(consultaVO);
+                when(consultaService.salvar(any(ProntuarioRequestDTO.class))).thenReturn(consultaVO);
                 // Mock do assembler para converter a consulta em modelo HATEOAS
                 when(assembler.toModel(consultaVO)).thenReturn(consultaModel);
 
@@ -249,13 +249,13 @@ class ConsultaControllerTest {
                 when(assembler.toModel(consultaVO)).thenReturn(
                                 EntityModel.of(consultaVO,
                                                 // Adiciona link self referenciando a própria consulta
-                                                linkTo(methodOn(ConsultaController.class).buscarPorId(1L))
+                                                linkTo(methodOn(ProntuarioController.class).buscarPorId(1L))
                                                                 .withSelfRel(),
                                                 // Adiciona link para listar todas as consultas
-                                                linkTo(methodOn(ConsultaController.class).listarTodas())
+                                                linkTo(methodOn(ProntuarioController.class).listarTodas())
                                                                 .withRel("consultas"),
                                                 // Adiciona link para deletar a consulta
-                                                linkTo(methodOn(ConsultaController.class).deletar(1L))
+                                                linkTo(methodOn(ProntuarioController.class).deletar(1L))
                                                                 .withRel("delete")));
 
                 // Executa GET request para buscar consulta por ID

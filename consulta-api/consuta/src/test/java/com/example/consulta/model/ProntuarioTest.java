@@ -12,7 +12,7 @@ class ProntuarioTest {
     @DisplayName("Deve adicionar uma nova entrada à lista de histórico corretamente")
     void adicionarEntrada_deveIncrementarListaEConfigurarRelacao() {
         // Cria uma instância do prontuário, que começa com uma lista de entradas vazia.
-        Prontuario prontuario = new Prontuario();
+        Consulta prontuario = new Consulta();
         assertThat(prontuario.getEntradas()).isNotNull().isEmpty();
 
         // Cria a nova entrada que será adicionada.
@@ -26,6 +26,6 @@ class ProntuarioTest {
         assertThat(prontuario.getEntradas()).hasSize(1).contains(novaEntrada);
         // Verifica a relação bidirecional: a 'novaEntrada' agora "sabe" a qual
         // prontuário ela pertence.
-        assertThat(novaEntrada.getProntuario()).isEqualTo(prontuario);
+        assertThat(novaEntrada.getConsulta()).isEqualTo(prontuario);
     }
 }
