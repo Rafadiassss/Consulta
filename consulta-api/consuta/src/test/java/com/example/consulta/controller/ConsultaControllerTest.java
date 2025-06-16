@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ConsultaController.class)
-@DisplayName("Testes do Controller de Prontuários (API)")
+@DisplayName("Testes do Controller de Consulta (API)")
 class ConsultaControllerTest {
 
         @Autowired
@@ -49,66 +49,75 @@ class ConsultaControllerTest {
         void setUp() {
                 EntradaConsultaVO entradaVO = new EntradaConsultaVO(1L, LocalDateTime.now(), "Diagnóstico",
                                 "Tratamento", "Obs");
-                consultaVO = new ConsultaVO(10L, "PRT-001", Collections.singletonList(entradaVO));
-                consultaRequestDTO = new ConsultaRequestDTO("PRT-001");
+                consultaVO = new ConsultaVO(10L, "PRT-001", 1L, Collections.singletonList(entradaVO));
+                consultaRequestDTO = new ConsultaRequestDTO("PRT-001", 1L);
         }
 
         @Test
-        @DisplayName("Deve criar um prontuário e retornar status 201 Created")
-        void criarProntuario_comSucesso() throws Exception {
-                // Prepara o modelo HATEOAS esperado.
+        @DisplayName("Deve criar uma consulta e retornar status 201 Created")
+        void criarConsulta_comSucesso() throws Exception {
+                // Cria um modelo HATEOAS com o objeto consultaVO
                 EntityModel<ConsultaVO> consultaModel = EntityModel.of(consultaVO);
-                // Simula o serviço retornando o VO com sucesso.
+                // Mock: simula chamada ao service retornando consultaVO
                 when(consultaService.criarConsulta(eq(1L), any(ConsultaRequestDTO.class)))
                                 .thenReturn(consultaVO);
-                // Simula o assembler convertendo o VO.
+                // Mock: simula conversão do VO para modelo HATEOAS
                 when(assembler.toModel(consultaVO)).thenReturn(consultaModel);
 
-                // Executa a requisição POST e verifica o resultado.
+                // Executa POST para /consulta/1 com o DTO como JSON
                 mockMvc.perform(post("/consulta/{idUsuario}", 1L)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(consultaRequestDTO)))
+                                // Verifica se retornou HTTP 201 Created
                                 .andExpect(status().isCreated());
         }
 
         @Test
         @DisplayName("Deve retornar status 403 Forbidden ao tentar criar consulta com usuário não-médico")
-        void criarProntuario_quandoUsuarioNaoEhMedico() throws Exception {
-                // Simula o serviço lançando uma exceção de permissão.
+        void criarConsulta_quandoUsuarioNaoEhMedico() throws Exception {
+                // Configura o mock do serviço para lançar exceção quando usuário não é médico
                 when(consultaService.criarConsulta(eq(2L), any(ConsultaRequestDTO.class)))
                                 .thenThrow(new IllegalArgumentException("Apenas médicos podem criar consulta."));
 
-                // Executa a requisição e espera o status 403.
-                mockMvc.perform(post("/prontuarios/{idUsuario}", 2L)
+                // Faz requisição POST para criar consulta com ID de usuário não-médico
+                mockMvc.perform(post("/consulta/{idUsuario}", 2L)
+                                // Define tipo de conteúdo como JSON
                                 .contentType(MediaType.APPLICATION_JSON)
+                                // Converte DTO para JSON e envia no corpo
                                 .content(objectMapper.writeValueAsString(consultaRequestDTO)))
+                                // Verifica se retorna status 403 (Forbidden)
                                 .andExpect(status().isForbidden());
         }
 
         @Test
-        @DisplayName("Deve buscar um prontuário e retornar status 200 OK")
-        void buscarProntuario_comSucesso() throws Exception {
-                // Prepara o modelo HATEOAS esperado.
+        @DisplayName("Deve buscar uma consulta e retornar status 200 OK")
+        void buscarConsulta_comSucesso() throws Exception {
+                // Cria um modelo HATEOAS com o objeto consultaVO
                 EntityModel<ConsultaVO> consultaModel = EntityModel.of(consultaVO);
-                // Simula o serviço e o assembler.
+                // Configura mock do service para retornar consultaVO quando buscar consulta
+                // 1,10
                 when(consultaService.buscarConsultaVO(1L, 10L)).thenReturn(consultaVO);
+                // Configura mock do assembler para retornar o modelo HATEOAS
                 when(assembler.toModel(consultaVO)).thenReturn(consultaModel);
 
-                // Executa a requisição e verifica a resposta.
+                // Faz requisição GET para buscar consulta
                 mockMvc.perform(get("/consulta/{idUsuario}/{idConsulta}", 1L, 10L))
+                                // Verifica se retornou status 200 OK
                                 .andExpect(status().isOk())
+                                // Verifica se o número da consulta está correto no JSON
                                 .andExpect(jsonPath("$.numero", is("PRT-001")));
         }
 
         @Test
         @DisplayName("Deve retornar status 404 Not Found ao buscar consulta com usuário inexistente")
-        void buscarProntuario_quandoUsuarioNaoEncontrado() throws Exception {
-                // Simula o serviço lançando uma exceção porque o usuário não foi encontrado.
+        void buscarConsulta_quandoUsuarioNaoEncontrado() throws Exception {
+                // Configura o mock para simular erro quando usuário 99 não existe
                 when(consultaService.buscarConsultaVO(99L, 10L))
                                 .thenThrow(new RuntimeException("Usuário não encontrado."));
 
-                // Executa a requisição e espera o status 404.
-                mockMvc.perform(get("/prontuarios/{idUsuario}/{idConsulta}", 99L, 10L))
+                // Faz requisição GET para consulta com usuário inválido
+                mockMvc.perform(get("/consulta/{idUsuario}/{idConsulta}", 99L, 10L))
+                                // Verifica se retorna HTTP 404
                                 .andExpect(status().isNotFound());
         }
 }

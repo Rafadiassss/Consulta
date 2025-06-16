@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProntuarioController.class)
-@DisplayName("Testes do Controller de Consultas (API)")
+@DisplayName("Testes do Controller de Prontuário (API)")
 class ProntuarioControllerTest {
 
         @Autowired
@@ -48,29 +48,30 @@ class ProntuarioControllerTest {
 
         private ProntuarioVO prontuarioVO;
         private ProntuarioRequestDTO prontuarioRequestDTO;
-        private EntityModel<ProntuarioVO> consultaModel;
+        private EntityModel<ProntuarioVO> prontuarioModel;
 
         @BeforeEach
         void setUp() {
                 prontuarioVO = new ProntuarioVO(1L, LocalDateTime.now(), "AGENDADA", "Rotina", null, null, null, null);
-                prontuarioRequestDTO = new ProntuarioRequestDTO(LocalDateTime.now().plusDays(5), "AGENDADA", "Rotina", 1L,
+                prontuarioRequestDTO = new ProntuarioRequestDTO(LocalDateTime.now().plusDays(5), "AGENDADA", "Rotina",
+                                1L,
                                 1L, null,
                                 null);
-                consultaModel = EntityModel.of(prontuarioVO,
+                prontuarioModel = EntityModel.of(prontuarioVO,
                                 linkTo(methodOn(ProntuarioController.class).buscarPorId(1L)).withSelfRel());
         }
 
         @Test
-        @DisplayName("Deve salvar uma nova consulta e retornar status 201 Created")
+        @DisplayName("Deve salvar um novo prontuário e retornar status 201 Created")
         void salvar() throws Exception {
                 // Mock do serviço para retornar prontuarioVO ao salvar
                 when(prontuarioService.salvar(any(ProntuarioRequestDTO.class))).thenReturn(prontuarioVO);
 
                 // Mock do assembler para retornar modelo HATEOAS com links
-                when(assembler.toModel(prontuarioVO)).thenReturn(consultaModel);
+                when(assembler.toModel(prontuarioVO)).thenReturn(prontuarioModel);
 
-                // Executa POST para criar consulta
-                mockMvc.perform(post("/consultas")
+                // Executa POST para criar prontuário
+                mockMvc.perform(post("/prontuario")
                                 // Define content type como JSON
                                 .contentType(MediaType.APPLICATION_JSON)
                                 // Converte DTO para JSON no body
@@ -78,7 +79,7 @@ class ProntuarioControllerTest {
                                 // Verifica status 201 Created
                                 .andExpect(status().isCreated())
                                 // Verifica Location header com URI do recurso criado
-                                .andExpect(header().string("Location", containsString("/consultas/1")));
+                                .andExpect(header().string("Location", containsString("/prontuario/1")));
         }
 
         @Test
@@ -90,20 +91,21 @@ class ProntuarioControllerTest {
                                 .thenThrow(new RuntimeException("Paciente não encontrado"));
 
                 // Executa a requisição POST e espera um erro 404.
-                mockMvc.perform(post("/consultas")
+                mockMvc.perform(post("/prontuario")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(prontuarioRequestDTO)))
                                 .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Deve retornar status 404 Not Found ao tentar atualizar consulta inexistente")
+        @DisplayName("Deve retornar status 404 Not Found ao tentar atualizar prontuário inexistente")
         void atualizar_quandoNaoEncontrado() throws Exception {
-                // Configura o mock do serviço para simular uma consulta não encontrada
-                when(prontuarioService.atualizar(eq(99L), any(ProntuarioRequestDTO.class))).thenReturn(Optional.empty());
+                // Configura o mock do serviço para simular um prontuário não encontrado
+                when(prontuarioService.atualizar(eq(99L), any(ProntuarioRequestDTO.class)))
+                                .thenReturn(Optional.empty());
 
-                // Envia requisição PUT para atualizar consulta com ID 99
-                mockMvc.perform(put("/consultas/{id}", 99L)
+                // Envia requisição PUT para atualizar prontuário com ID 99
+                mockMvc.perform(put("/prontuario/{id}", 99L)
                                 // Define o tipo de conteúdo como JSON
                                 .contentType(MediaType.APPLICATION_JSON)
                                 // Converte e envia o DTO no corpo da requisição
@@ -113,88 +115,88 @@ class ProntuarioControllerTest {
         }
 
         @Test
-        @DisplayName("Deve buscar uma consulta por ID e retornar status 200 OK")
+        @DisplayName("Deve buscar um prontuário por ID e retornar status 200 OK")
         void buscarPorId_quandoEncontrado() throws Exception {
-                // Configura o mock do serviço para retornar uma consulta com ID 1
+                // Configura o mock do serviço para retornar um prontuário com ID 1
                 when(prontuarioService.buscarPorId(1L)).thenReturn(Optional.of(prontuarioVO));
-                // Configura o mock do assembler para converter a consulta em modelo HATEOAS
-                when(assembler.toModel(prontuarioVO)).thenReturn(consultaModel);
+                // Configura o mock do assembler para converter o prontuário em modelo HATEOAS
+                when(assembler.toModel(prontuarioVO)).thenReturn(prontuarioModel);
 
-                // Executa uma requisição GET para buscar a consulta por ID
-                mockMvc.perform(get("/consultas/{id}", 1L))
+                // Executa uma requisição GET para buscar o prontuário por ID
+                mockMvc.perform(get("/prontuario/{id}", 1L))
                                 // Verifica se o status da resposta é 200 OK
                                 .andExpect(status().isOk())
                                 // Verifica se o ID no response é igual a 1
                                 .andExpect(jsonPath("$.id").value(1L))
-                                // Verifica se o status da consulta é "AGENDADA"
+                                // Verifica se o status do prontuário é "AGENDADA"
                                 .andExpect(jsonPath("$.status").value("AGENDADA"));
         }
 
         @Test
-        @DisplayName("Deve retornar status 404 Not Found ao buscar consulta inexistente")
+        @DisplayName("Deve retornar status 404 Not Found ao buscar prontuário inexistente")
         void buscarPorId_quandoNaoEncontrado() throws Exception {
-                // Configura o mock para retornar Optional vazio quando buscar consulta com ID
+                // Configura o mock para retornar Optional vazio quando buscar prontuário com ID
                 // 99
                 when(prontuarioService.buscarPorId(99L)).thenReturn(Optional.empty());
 
-                // Executa uma requisição GET para buscar consulta com ID 99
-                mockMvc.perform(get("/consultas/{id}", 99L))
+                // Executa uma requisição GET para buscar prontuário com ID 99
+                mockMvc.perform(get("/prontuario/{id}", 99L))
                                 // Verifica se o status da resposta é 404 Not Found
                                 .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Deve listar todas as consultas e retornar status 200 OK")
+        @DisplayName("Deve listar todos os prontuários e retornar status 200 OK")
         void listarTodas() throws Exception {
                 // Configuração do mock do serviço
-                List<ProntuarioVO> consultas = List.of(prontuarioVO);
-                when(prontuarioService.listarTodos()).thenReturn(consultas);
+                List<ProntuarioVO> prontuarios = List.of(prontuarioVO);
+                when(prontuarioService.listarTodos()).thenReturn(prontuarios);
 
                 // Mock do método toModel do assembler para qualquer prontuarioVO
-                when(assembler.toModel(any(ProntuarioVO.class))).thenReturn(consultaModel);
+                when(assembler.toModel(any(ProntuarioVO.class))).thenReturn(prontuarioModel);
 
                 // Teste simplificado que verifica apenas o status
-                mockMvc.perform(get("/consultas"))
+                mockMvc.perform(get("/prontuario"))
                                 .andExpect(status().isOk());
         }
 
         @Test
-        @DisplayName("Deve excluir uma consulta existente e retornar status 204 No Content")
+        @DisplayName("Deve excluir um prontuário existente e retornar status 204 No Content")
         void deletar_quandoEncontrado() throws Exception {
-                // Configura o mock do serviço para retornar true ao deletar consulta com ID 1
+                // Configura o mock do serviço para retornar true ao deletar prontuário com ID 1
                 when(prontuarioService.deletar(1L)).thenReturn(true);
 
-                // Executa requisição DELETE para o endpoint /consultas/1
-                mockMvc.perform(delete("/consultas/{id}", 1L))
+                // Executa requisição DELETE para o endpoint /prontuario/1
+                mockMvc.perform(delete("/prontuario/{id}", 1L))
                                 // Verifica se o status da resposta é 204 No Content
                                 .andExpect(status().isNoContent());
         }
 
         @Test
-        @DisplayName("Deve retornar status 404 Not Found ao tentar excluir consulta inexistente")
+        @DisplayName("Deve retornar status 404 Not Found ao tentar excluir prontuário inexistente")
         void deletar_quandoNaoEncontrado() throws Exception {
-                // Configura o mock do serviço para retornar falso ao tentar deletar consulta
+                // Configura o mock do serviço para retornar falso ao tentar deletar prontuário
                 // inexistente
                 when(prontuarioService.deletar(99L)).thenReturn(false);
 
-                // Executa requisição DELETE para o endpoint /consultas/99
-                mockMvc.perform(delete("/consultas/{id}", 99L))
+                // Executa requisição DELETE para o endpoint /prontuario/99
+                mockMvc.perform(delete("/prontuario/{id}", 99L))
                                 // Verifica se o status da resposta é 404 Not Found
                                 .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Deve atualizar uma consulta existente e retornar status 200 OK")
+        @DisplayName("Deve atualizar um prontuário existente e retornar status 200 OK")
         void atualizar_quandoEncontrado() throws Exception {
-                // Configura mock do serviço para retornar uma consulta quando atualizar for
+                // Configura mock do serviço para retornar um prontuário quando atualizar for
                 // chamado
                 when(prontuarioService.atualizar(eq(1L), any(ProntuarioRequestDTO.class)))
                                 .thenReturn(Optional.of(prontuarioVO));
-                // Configura mock do assembler para converter a consulta em modelo HATEOAS
-                when(assembler.toModel(prontuarioVO)).thenReturn(consultaModel);
+                // Configura mock do assembler para converter o prontuário em modelo HATEOAS
+                when(assembler.toModel(prontuarioVO)).thenReturn(prontuarioModel);
 
-                // Executa requisição PUT para atualizar consulta
-                mockMvc.perform(put("/consultas/{id}", 1L)
+                // Executa requisição PUT para atualizar prontuário
+                mockMvc.perform(put("/prontuario/{id}", 1L)
                                 // Define o tipo de conteúdo como JSON
                                 .contentType(MediaType.APPLICATION_JSON)
                                 // Converte o objeto para JSON e define como corpo da requisição
@@ -212,8 +214,8 @@ class ProntuarioControllerTest {
                 ProntuarioRequestDTO requestInvalido = new ProntuarioRequestDTO(
                                 null, "", "Rotina", null, null, null, null);
 
-                // Executa requisição POST para o endpoint /consultas com o objeto inválido
-                mockMvc.perform(post("/consultas")
+                // Executa requisição POST para o endpoint /prontuario com o objeto inválido
+                mockMvc.perform(post("/prontuario")
                                 // Define o tipo de conteúdo como JSON
                                 .contentType(MediaType.APPLICATION_JSON)
                                 // Converte o objeto para JSON e define como corpo da requisição
@@ -223,49 +225,49 @@ class ProntuarioControllerTest {
         }
 
         @Test
-        @DisplayName("Deve retornar o corpo da resposta correto ao salvar consulta")
+        @DisplayName("Deve retornar o corpo da resposta correto ao salvar prontuário")
         void salvar_verificarCorpoResposta() throws Exception {
-                // Mock do serviço para retornar uma consulta quando salvar for chamado
+                // Mock do serviço para retornar um prontuário quando salvar for chamado
                 when(prontuarioService.salvar(any(ProntuarioRequestDTO.class))).thenReturn(prontuarioVO);
-                // Mock do assembler para converter a consulta em modelo HATEOAS
-                when(assembler.toModel(prontuarioVO)).thenReturn(consultaModel);
+                // Mock do assembler para converter o prontuário em modelo HATEOAS
+                when(assembler.toModel(prontuarioVO)).thenReturn(prontuarioModel);
 
-                // Executa POST para criar consulta e verifica:
-                mockMvc.perform(post("/consultas")
+                // Executa POST para criar prontuário e verifica:
+                mockMvc.perform(post("/prontuario")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(prontuarioRequestDTO)))
                                 .andExpect(status().isCreated()) // - Status 201 Created
                                 .andExpect(jsonPath("$.id").value(1L)) // - ID correto no response
-                                .andExpect(jsonPath("$.status").value("AGENDADA")) // - Status da consulta correto
-                                .andExpect(jsonPath("$.nomeConsulta").value("Rotina")); // - Nome da consulta correto
+                                .andExpect(jsonPath("$.status").value("AGENDADA")) // - Status do prontuário correto
+                                .andExpect(jsonPath("$.nomeConsulta").value("Rotina")); // - Nome do prontuário correto
         }
 
         @Test
         @DisplayName("Deve incluir links HATEOAS na resposta")
         void buscarPorId_verificarLinks() throws Exception {
-                // Configura o mock para retornar uma consulta quando buscar por ID 1
+                // Configura o mock para retornar um prontuário quando buscar por ID 1
                 when(prontuarioService.buscarPorId(1L)).thenReturn(Optional.of(prontuarioVO));
                 // Configura o mock do assembler para retornar um EntityModel com links HATEOAS
                 when(assembler.toModel(prontuarioVO)).thenReturn(
                                 EntityModel.of(prontuarioVO,
-                                                // Adiciona link self referenciando a própria consulta
+                                                // Adiciona link self referenciando o próprio prontuário
                                                 linkTo(methodOn(ProntuarioController.class).buscarPorId(1L))
                                                                 .withSelfRel(),
-                                                // Adiciona link para listar todas as consultas
+                                                // Adiciona link para listar todos os prontuários
                                                 linkTo(methodOn(ProntuarioController.class).listarTodas())
-                                                                .withRel("consultas"),
-                                                // Adiciona link para deletar a consulta
+                                                                .withRel("prontuarios"),
+                                                // Adiciona link para deletar o prontuário
                                                 linkTo(methodOn(ProntuarioController.class).deletar(1L))
                                                                 .withRel("delete")));
 
-                // Executa GET request para buscar consulta por ID
-                mockMvc.perform(get("/consultas/{id}", 1L))
+                // Executa GET request para buscar prontuário por ID
+                mockMvc.perform(get("/prontuario/{id}", 1L))
                                 // Verifica se retornou status 200 OK
                                 .andExpect(status().isOk())
                                 // Verifica se o link self está presente na resposta
                                 .andExpect(jsonPath("$._links.self.href").exists())
-                                // Verifica se o link consultas está presente na resposta
-                                .andExpect(jsonPath("$._links.consultas.href").exists())
+                                // Verifica se o link prontuarios está presente na resposta
+                                .andExpect(jsonPath("$._links.prontuarios.href").exists())
                                 // Verifica se o link delete está presente na resposta
                                 .andExpect(jsonPath("$._links.delete.href").exists());
         }
@@ -273,8 +275,8 @@ class ProntuarioControllerTest {
         @Test
         @DisplayName("Deve retornar status 405 quando o método HTTP não é permitido")
         void metodoNaoPermitido() throws Exception {
-                // Tenta fazer uma requisição PATCH para /consultas/1
-                mockMvc.perform(patch("/consultas/1"))
+                // Tenta fazer uma requisição PATCH para /prontuario/1
+                mockMvc.perform(patch("/prontuario/1"))
                                 // Verifica se retorna status 405 Method Not Allowed
                                 .andExpect(status().isMethodNotAllowed());
         }

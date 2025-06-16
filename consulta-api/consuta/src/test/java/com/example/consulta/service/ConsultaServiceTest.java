@@ -2,8 +2,10 @@ package com.example.consulta.service;
 
 import com.example.consulta.dto.ConsultaRequestDTO;
 import com.example.consulta.enums.TipoUsuario;
+import com.example.consulta.model.Agenda;
 import com.example.consulta.model.Consulta;
 import com.example.consulta.model.Usuario;
+import com.example.consulta.repository.AgendaRepository;
 import com.example.consulta.repository.ConsultaRepository;
 import com.example.consulta.repository.UsuarioRepository;
 import com.example.consulta.vo.ConsultaVO;
@@ -31,13 +33,16 @@ class ConsultaServiceTest {
     private ConsultaRepository consultaRepository;
     @Mock
     private UsuarioRepository usuarioRepository;
+    @Mock
+    private AgendaRepository agendaRepository;
 
     @InjectMocks
     private ConsultaService consultaService;
 
     private Usuario medico;
     private Usuario paciente;
-    private Consulta prontuario;
+    private Consulta consulta;
+    private Agenda agenda;
     private ConsultaRequestDTO consultaRequestDTO;
 
     @BeforeEach
@@ -47,73 +52,137 @@ class ConsultaServiceTest {
         ReflectionTestUtils.setField(medico, "id", 1L);
 
         paciente = new Usuario();
-        paciente.setTipo(TipoUsuario.MEDICO);
+        paciente.setTipo(TipoUsuario.PACIENTE);
         ReflectionTestUtils.setField(paciente, "id", 2L);
 
-        prontuario = new Consulta();
-        prontuario.setNumero("PRT-001");
-        ReflectionTestUtils.setField(prontuario, "id", 10L);
+        agenda = new Agenda();
+        ReflectionTestUtils.setField(agenda, "id", 1L);
 
-        consultaRequestDTO = new ConsultaRequestDTO("PRT-002");
+        consulta = new Consulta();
+        consulta.setNumero("PRT-001");
+        consulta.setAgenda(agenda);
+        ReflectionTestUtils.setField(consulta, "id", 10L);
+
+        consultaRequestDTO = new ConsultaRequestDTO("PRT-002", 1L);
     }
 
     @Test
-    @DisplayName("Deve criar um prontuário com sucesso quando o usuário é um médico")
-    void criarProntuario_comSucesso() {
-        // Simula o repositório encontrando o usuário médico.
+    @DisplayName("Deve criar uma consulta com sucesso quando usuário for médico")
+    void criarConsulta_quandoUsuarioForMedico() {
+        // Configura o mock para retornar o médico quando buscar o ID 1
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
-        // Simula a ação de salvar o prontuário.
-        when(consultaRepository.save(any(Consulta.class))).thenReturn(prontuario);
-
-        // Chama o método do serviço.
+        // Configura o mock para retornar a agenda quando buscar o ID 1
+        when(agendaRepository.findById(1L)).thenReturn(Optional.of(agenda));
+        // Configura o mock do save para simular o salvamento e atribuir ID 20
+        when(consultaRepository.save(any(Consulta.class))).thenAnswer(invocation -> {
+            // Obtém o objeto Consulta passado como argumento
+            Consulta consultaSalva = invocation.getArgument(0);
+            // Define o ID 20 via reflection
+            ReflectionTestUtils.setField(consultaSalva, "id", 20L);
+            // Retorna a consulta com ID atribuído
+            return consultaSalva;
+        });
+        // Act
         ConsultaVO resultado = consultaService.criarConsulta(1L, consultaRequestDTO);
 
-        // Verifica o resultado.
+        // Verifica se o resultado não é nulo
         assertThat(resultado).isNotNull();
-        assertThat(resultado.numero()).isEqualTo("PRT-001");
+        // Verifica se o ID da consulta é 20
+        assertThat(resultado.id()).isEqualTo(20L);
+        // Verifica se o número da consulta é PRT-002
+        assertThat(resultado.numero()).isEqualTo("PRT-002");
+        // Verifica se o ID da agenda é 1
+        assertThat(resultado.agendaId()).isEqualTo(1L);
+        // Verifica se o método save foi chamado exatamente uma vez
+        verify(consultaRepository, times(1)).save(any(Consulta.class));
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao criar prontuário se o usuário não for médico")
-    void criarProntuario_quandoUsuarioNaoEhMedico() {
-        // Simula o repositório encontrando um usuário que é paciente.
+    @DisplayName("Deve lançar exceção ao tentar criar consulta com usuário não-médico")
+    void criarConsulta_quandoUsuarioNaoForMedico_deveLancarExcecao() {
+        // Configura o mock para retornar um paciente quando buscar ID 2
         when(usuarioRepository.findById(2L)).thenReturn(Optional.of(paciente));
 
-        // Verifica se a chamada lança a exceção de argumento ilegal.
-        assertThrows(IllegalArgumentException.class, () -> {
+        // Verifica se a exceção é lançada ao tentar criar consulta com paciente
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             consultaService.criarConsulta(2L, consultaRequestDTO);
         });
 
-        // Garante que o prontuário nunca foi salvo.
+        // Valida a mensagem de erro retornada
+        assertThat(exception.getMessage()).contains("Apenas médicos podem criar Consulta");
+        // Garante que o método save nunca foi chamado
         verify(consultaRepository, never()).save(any(Consulta.class));
     }
 
     @Test
-    @DisplayName("Deve buscar um prontuário com sucesso")
-    void buscarProntuario_comSucesso() {
-        // Simula a busca bem-sucedida do médico e do prontuário.
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
-        when(consultaRepository.findById(10L)).thenReturn(Optional.of(prontuario));
+    @DisplayName("Deve lançar exceção ao tentar criar consulta com usuário inexistente")
+    void criarConsulta_quandoUsuarioNaoExistir_deveLancarExcecao() {
+        // Configura o mock para retornar Optional vazio quando buscar ID 99
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
 
-        // Chama o método de serviço.
-        ConsultaVO resultado = consultaService.buscarConsultaVO(1L, 10L);
+        // Executa o teste e captura a exceção esperada
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            consultaService.criarConsulta(99L, consultaRequestDTO);
+        });
 
-        // Verifica o resultado.
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.id()).isEqualTo(10L);
+        // Verifica se a mensagem de erro contém o texto esperado
+        assertThat(exception.getMessage()).contains("Usuário (médico) não encontrado");
+        // Confirma que o método save nunca foi chamado
+        verify(consultaRepository, never()).save(any(Consulta.class));
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao buscar prontuário se o prontuário não for encontrado")
-    void buscarProntuario_quandoNaoEncontrado() {
-        // Simula a busca do médico bem-sucedida.
+    @DisplayName("Deve buscar uma consulta com sucesso quando usuário for médico")
+    void buscarConsultaVO_quandoUsuarioForMedico_deveRetornarConsultaVO() {
+        // Configura mock para retornar médico com ID 1
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
-        // Simula a falha na busca do prontuário.
+        // Configura mock para retornar consulta com ID 10
+        when(consultaRepository.findById(10L)).thenReturn(Optional.of(consulta));
+
+        // Executa o método de busca de consulta
+        ConsultaVO resultado = consultaService.buscarConsultaVO(1L, 10L);
+
+        // Verifica se o resultado não é nulo
+        assertThat(resultado).isNotNull();
+        // Valida se o ID da consulta é 10
+        assertThat(resultado.id()).isEqualTo(10L);
+        // Valida se o número da consulta é PRT-001
+        assertThat(resultado.numero()).isEqualTo("PRT-001");
+        // Valida se o ID da agenda é 1
+        assertThat(resultado.agendaId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao buscar consulta com usuário não-médico")
+    void buscarConsultaVO_quandoUsuarioNaoForMedico() {
+        // Configura o mock para retornar um paciente quando buscar ID 2
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(paciente));
+
+        // Verifica se a exceção é lançada ao tentar buscar consulta com paciente
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            consultaService.buscarConsultaVO(2L, 10L);
+        });
+
+        // Valida a mensagem de erro retornada
+        assertThat(exception.getMessage()).contains("Apenas médicos podem visualizar Consulta");
+        // Garante que o método findById nunca foi chamado
+        verify(consultaRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao buscar consulta inexistente")
+    void buscarConsultaVO_quandoConsultaNaoExistir() {
+        // Configura mock para retornar médico quando buscar ID 1
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
+        // Configura mock para retornar vazio ao buscar consulta inexistente
         when(consultaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        // Verifica se a exceção correta é lançada.
-        assertThrows(RuntimeException.class, () -> {
+        // Executa o teste e captura a exceção esperada
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             consultaService.buscarConsultaVO(1L, 99L);
         });
+
+        // Verifica se a mensagem de erro está correta
+        assertThat(exception.getMessage()).contains("Consulta não encontrada");
     }
 }

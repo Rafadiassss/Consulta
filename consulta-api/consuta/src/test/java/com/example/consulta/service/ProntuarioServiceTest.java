@@ -28,8 +28,6 @@ import static org.mockito.Mockito.*;
 class ProntuarioServiceTest {
 
     @Mock
-    private Prontuario prontuario;
-    @Mock
     private PacienteRepository pacienteRepository;
     @Mock
     private MedicoRepository medicoRepository;
@@ -56,6 +54,7 @@ class ProntuarioServiceTest {
 
         prontuario2 = new Prontuario(LocalDateTime.now().plusDays(1), "AGENDADA", paciente, medico);
         prontuario2.setId(1L);
+        prontuario2.setNomeConsulta("Consulta de Rotina");
 
         prontuarioRequestDTO = new ProntuarioRequestDTO(
                 LocalDateTime.now().plusDays(1), "AGENDADA", "Consulta de Rotina",
@@ -65,7 +64,7 @@ class ProntuarioServiceTest {
     @Test
     @DisplayName("Deve listar todos os prontuários")
     void listarTodos() {
-        when(prontuarioRepository.findAll()).thenReturn(Collections.singletonList(prontuario));
+        when(prontuarioRepository.findAll()).thenReturn(Collections.singletonList(prontuario2));
         List<ProntuarioVO> resultado = prontuarioService.listarTodos();
         assertThat(resultado).isNotNull().hasSize(1);
     }
@@ -75,7 +74,7 @@ class ProntuarioServiceTest {
     void salvar_comSucesso() {
         when(pacienteRepository.findById(1L)).thenReturn(Optional.of(paciente));
         when(medicoRepository.findById(2L)).thenReturn(Optional.of(medico));
-        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario);
+        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario2);
 
         ProntuarioVO resultado = prontuarioService.salvar(prontuarioRequestDTO);
 
@@ -99,10 +98,10 @@ class ProntuarioServiceTest {
     @Test
     @DisplayName("Deve atualizar um prontuário com sucesso")
     void atualizar_quandoEncontrado() {
-        when(prontuarioRepository.findById(1L)).thenReturn(Optional.of(prontuario));
+        when(prontuarioRepository.findById(1L)).thenReturn(Optional.of(prontuario2));
         when(pacienteRepository.findById(anyLong())).thenReturn(Optional.of(paciente));
         when(medicoRepository.findById(anyLong())).thenReturn(Optional.of(medico));
-        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario);
+        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario2);
 
         Optional<ProntuarioVO> resultado = prontuarioService.atualizar(1L, prontuarioRequestDTO);
 
