@@ -6,6 +6,7 @@ import java.util.List;
 public record ConsultaResponseDTO(
         Long id,
         String numero,
+        Long agendaId,
         List<EntradaConsultaResponseDTO> entradas // Usa o DTO de resposta da Entrada
 ) {
 }

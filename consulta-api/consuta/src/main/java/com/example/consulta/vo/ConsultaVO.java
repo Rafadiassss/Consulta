@@ -6,6 +6,7 @@ import java.util.List;
 public record ConsultaVO(
         Long id,
         String numero,
+        Long agendaId,
         List<EntradaConsultaVO> entradas // Usa o VO da Entrada
 ) {
 }

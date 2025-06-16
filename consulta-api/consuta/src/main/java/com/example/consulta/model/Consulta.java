@@ -5,12 +5,20 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 public class Consulta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    
+    @ManyToOne
+    @JoinColumn(name = "agenda_id")
+    @JsonIgnoreProperties("agenda")
+    private Agenda agenda;
 
     private String numero;
 
@@ -47,4 +55,13 @@ public class Consulta {
     public void setEntradas(List<EntradaConsulta> entradas) {
         this.entradas = entradas;
     }
+
+    public Agenda getAgenda() {
+        return agenda;
+    }
+
+    public void setAgenda(Agenda agenda) {
+        this.agenda = agenda;
+    }
+    
 }
