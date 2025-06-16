@@ -32,23 +32,23 @@ class ExameServiceTest {
     @Mock
     private ExameRepository exameRepository;
     @Mock
-    private Prontuario consultaRepository;
+    private ProntuarioRepository prontuarioRepository;
 
     @InjectMocks
     private ExameService exameService;
 
     private Exame exame;
-    private Prontuario consulta;
+    private Prontuario prontuario;
     private ExameRequestDTO exameRequestDTO;
 
     @BeforeEach
     void setUp() {
-        // Prepara uma consulta de base.
-        consulta = new Prontuario();
-        consulta.setId(10L);
+        // Prepara uma prontuario de base.
+        prontuario = new Prontuario();
+        prontuario.setId(10L);
 
-        // Prepara um exame de base, já associado à consulta.
-        exame = new Exame("Hemograma Completo", "Resultados normais", "Sem observações", consulta);
+        // Prepara um exame de base, já associado à prontuario.
+        exame = new Exame("Hemograma Completo", "Resultados normais", "Sem observações", prontuario);
         // Isso simula uma entidade que foi salva e recebeu um ID do banco.
         ReflectionTestUtils.setField(exame, "id", 1L);
 
@@ -73,8 +73,8 @@ class ExameServiceTest {
     @Test
     @DisplayName("Deve salvar a partir de um DTO e retornar um VO")
     void salvar() {
-        // Simula o repositório encontrando a consulta associada.
-        when(consultaRepository.findById(10L)).thenReturn(Optional.of(consulta));
+        // Simula o repositório encontrando a prontuario associada.
+        when(prontuarioRepository.findById(10L)).thenReturn(Optional.of(prontuario));
         // Simula a ação de salvar, que retorna a entidade com ID.
         when(exameRepository.save(any(Exame.class))).thenReturn(exame);
 
@@ -88,10 +88,10 @@ class ExameServiceTest {
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao salvar se a consulta associada não existir")
-    void salvar_quandoConsultaNaoExiste() {
-        // Simula o repositório NÃO encontrando a consulta.
-        when(consultaRepository.findById(anyLong())).thenReturn(Optional.empty());
+    @DisplayName("Deve lançar exceção ao salvar se a prontuario associada não existir")
+    void salvar_quandoprontuarioNaoExiste() {
+        // Simula o repositório NÃO encontrando a prontuario.
+        when(prontuarioRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // Verifica se a chamada ao serviço lança a exceção esperada.
         assertThrows(RuntimeException.class, () -> {
@@ -105,9 +105,9 @@ class ExameServiceTest {
     @Test
     @DisplayName("Deve atualizar um exame existente com sucesso")
     void atualizar_quandoEncontrado() {
-        // Simula a busca do exame e da consulta existentes.
+        // Simula a busca do exame e da prontuario existentes.
         when(exameRepository.findById(1L)).thenReturn(Optional.of(exame));
-        when(consultaRepository.findById(10L)).thenReturn(Optional.of(consulta));
+        when(prontuarioRepository.findById(10L)).thenReturn(Optional.of(prontuario));
         // Simula a ação de salvar, retornando a entidade atualizada.
         when(exameRepository.save(any(Exame.class))).thenReturn(exame);
 

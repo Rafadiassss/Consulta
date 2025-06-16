@@ -1,12 +1,9 @@
 package com.example.consulta.service;
 
-import com.example.consulta.dto.ConsultaRequestDTO;
-import com.example.consulta.enums.TipoUsuario;
-import com.example.consulta.model.Consulta;
-import com.example.consulta.model.Usuario;
-import com.example.consulta.repository.ConsultaRepository;
-import com.example.consulta.repository.UsuarioRepository;
-import com.example.consulta.vo.ConsultaVO;
+import com.example.consulta.dto.ProntuarioRequestDTO;
+import com.example.consulta.model.*;
+import com.example.consulta.repository.*;
+import com.example.consulta.vo.ProntuarioVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,13 +11,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,92 +28,107 @@ import static org.mockito.Mockito.*;
 class ProntuarioServiceTest {
 
     @Mock
-    private ConsultaRepository prontuarioRepository;
+    private Prontuario prontuario;
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private PacienteRepository pacienteRepository;
+    @Mock
+    private MedicoRepository medicoRepository;
+    @Mock
+    private ProntuarioRepository prontuarioRepository;
+    @Mock
+    private PagamentoRepository pagamentoRepository;
 
     @InjectMocks
-    private ConsultaService prontuarioService;
+    private ProntuarioService prontuarioService;
 
-    private Usuario medico;
-    private Usuario paciente;
-    private Consulta prontuario;
-    private ConsultaRequestDTO prontuarioRequestDTO;
+    private Paciente paciente;
+    private Medico medico;
+    private Prontuario prontuario2;
+    private ProntuarioRequestDTO prontuarioRequestDTO;
 
     @BeforeEach
     void setUp() {
-        medico = new Usuario();
-        medico.setTipo(TipoUsuario.MEDICO);
-        ReflectionTestUtils.setField(medico, "id", 1L);
+        paciente = new Paciente();
+        paciente.setId(1L);
 
-        paciente = new Usuario();
-        paciente.setTipo(TipoUsuario.MEDICO);
-        ReflectionTestUtils.setField(paciente, "id", 2L);
+        medico = new Medico();
+        medico.setId(2L);
 
-        prontuario = new Consulta();
-        prontuario.setNumero("PRT-001");
-        ReflectionTestUtils.setField(prontuario, "id", 10L);
+        prontuario2 = new Prontuario(LocalDateTime.now().plusDays(1), "AGENDADA", paciente, medico);
+        prontuario2.setId(1L);
 
-        prontuarioRequestDTO = new ConsultaRequestDTO("PRT-002");
+        prontuarioRequestDTO = new ProntuarioRequestDTO(
+                LocalDateTime.now().plusDays(1), "AGENDADA", "Consulta de Rotina",
+                paciente.getId(), medico.getId(), null, null);
     }
 
     @Test
-    @DisplayName("Deve criar um prontuário com sucesso quando o usuário é um médico")
-    void criarProntuario_comSucesso() {
-        // Simula o repositório encontrando o usuário médico.
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
-        // Simula a ação de salvar o prontuário.
-        when(prontuarioRepository.save(any(Consulta.class))).thenReturn(prontuario);
+    @DisplayName("Deve listar todos os prontuários")
+    void listarTodos() {
+        when(prontuarioRepository.findAll()).thenReturn(Collections.singletonList(prontuario));
+        List<ProntuarioVO> resultado = prontuarioService.listarTodos();
+        assertThat(resultado).isNotNull().hasSize(1);
+    }
 
-        // Chama o método do serviço.
-        ConsultaVO resultado = prontuarioService.criarProntuario(1L, prontuarioRequestDTO);
+    @Test
+    @DisplayName("Deve salvar um prontuário com sucesso")
+    void salvar_comSucesso() {
+        when(pacienteRepository.findById(1L)).thenReturn(Optional.of(paciente));
+        when(medicoRepository.findById(2L)).thenReturn(Optional.of(medico));
+        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario);
 
-        // Verifica o resultado.
+        ProntuarioVO resultado = prontuarioService.salvar(prontuarioRequestDTO);
+
         assertThat(resultado).isNotNull();
-        assertThat(resultado.numero()).isEqualTo("PRT-001");
+        assertThat(resultado.paciente().getId()).isEqualTo(1L);
+        verify(prontuarioRepository).save(any(Prontuario.class));
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao criar prontuário se o usuário não for médico")
-    void criarProntuario_quandoUsuarioNaoEhMedico() {
-        // Simula o repositório encontrando um usuário que é paciente.
-        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(paciente));
+    @DisplayName("Deve lançar exceção ao salvar se o paciente não for encontrado")
+    void salvar_quandoPacienteNaoEncontrado() {
+        when(pacienteRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Verifica se a chamada lança a exceção de argumento ilegal.
-        assertThrows(IllegalArgumentException.class, () -> {
-            prontuarioService.criarProntuario(2L, prontuarioRequestDTO);
+        assertThrows(RuntimeException.class, () -> {
+            prontuarioService.salvar(prontuarioRequestDTO);
         });
 
-        // Garante que o prontuário nunca foi salvo.
-        verify(prontuarioRepository, never()).save(any(Consulta.class));
+        verify(prontuarioRepository, never()).save(any(Prontuario.class));
     }
 
     @Test
-    @DisplayName("Deve buscar um prontuário com sucesso")
-    void buscarProntuario_comSucesso() {
-        // Simula a busca bem-sucedida do médico e do prontuário.
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
-        when(prontuarioRepository.findById(10L)).thenReturn(Optional.of(prontuario));
+    @DisplayName("Deve atualizar um prontuário com sucesso")
+    void atualizar_quandoEncontrado() {
+        when(prontuarioRepository.findById(1L)).thenReturn(Optional.of(prontuario));
+        when(pacienteRepository.findById(anyLong())).thenReturn(Optional.of(paciente));
+        when(medicoRepository.findById(anyLong())).thenReturn(Optional.of(medico));
+        when(prontuarioRepository.save(any(Prontuario.class))).thenReturn(prontuario);
 
-        // Chama o método de serviço.
-        ConsultaVO resultado = prontuarioService.buscarProntuario(1L, 10L);
+        Optional<ProntuarioVO> resultado = prontuarioService.atualizar(1L, prontuarioRequestDTO);
 
-        // Verifica o resultado.
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.id()).isEqualTo(10L);
+        assertThat(resultado).isPresent();
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao buscar prontuário se o prontuário não for encontrado")
-    void buscarProntuario_quandoNaoEncontrado() {
-        // Simula a busca do médico bem-sucedida.
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(medico));
-        // Simula a falha na busca do prontuário.
+    @DisplayName("Deve retornar Optional vazio ao tentar atualizar prontuário inexistente")
+    void atualizar_quandoNaoEncontrado() {
         when(prontuarioRepository.findById(99L)).thenReturn(Optional.empty());
 
-        // Verifica se a exceção correta é lançada.
-        assertThrows(RuntimeException.class, () -> {
-            prontuarioService.buscarProntuario(1L, 99L);
-        });
+        Optional<ProntuarioVO> resultado = prontuarioService.atualizar(99L, prontuarioRequestDTO);
+
+        assertThat(resultado).isEmpty();
+        verify(prontuarioRepository, never()).save(any(Prontuario.class));
+    }
+
+    @Test
+    @DisplayName("Deve deletar um prontuário existente e retornar true")
+    void deletar_quandoEncontrado() {
+        when(prontuarioRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(prontuarioRepository).deleteById(1L);
+
+        boolean resultado = prontuarioService.deletar(1L);
+
+        assertThat(resultado).isTrue();
+        verify(prontuarioRepository).deleteById(1L);
     }
 }

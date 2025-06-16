@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Testes da Entidade Prontuario")
-class ProntuarioTest {
+class ConsultaTest {
 
     @Test
     @DisplayName("Deve adicionar uma nova entrada à lista de histórico corretamente")
@@ -16,7 +16,7 @@ class ProntuarioTest {
         assertThat(prontuario.getEntradas()).isNotNull().isEmpty();
 
         // Cria a nova entrada que será adicionada.
-        EntradaProntuario novaEntrada = new EntradaProntuario();
+        EntradaConsulta novaEntrada = new EntradaConsulta();
         novaEntrada.setDiagnostico("Febre e dor de cabeça");
 
         // Chama o método

@@ -142,16 +142,16 @@ public class ProntuarioService {
     }
 
     // Conversor VO
-    private ProntuarioVO toVO(Prontuario p) {
+    private ProntuarioVO toVO(Prontuario prontuario) {
         return new ProntuarioVO(
-                p.getId(),
-                p.getData(),
-                p.getStatus(),
-                p.getNomePontuario(),
-                p.getPaciente(),
-                p.getMedico(),
-                p.getPagamento(),
-                p.getProntuario()
+                prontuario.getId(),
+                prontuario.getData(),
+                prontuario.getStatus(),
+                prontuario.getNomePontuario(),
+                prontuario.getPaciente(),
+                prontuario.getMedico(),
+                prontuario.getPagamento(),
+                prontuario.getProntuario()
         );
     }
 }
